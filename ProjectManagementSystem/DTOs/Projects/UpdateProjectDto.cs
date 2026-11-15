@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProjectManagementSystem.DTOs.Projects;
 
+// البيانات المطلوبة لتعديل مشروع موجود
 public class UpdateProjectDto
 {
     [Required]

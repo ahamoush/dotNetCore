@@ -15,15 +15,17 @@ public class TasksController : ControllerBase
         _service = service;
     }
 
+    // GET /api/tasks
+    // أو: GET /api/tasks?projectId=1
     [HttpGet]
     public async Task<ActionResult<IEnumerable<TaskResponseDto>>> GetAll(
         [FromQuery] int? projectId)
     {
         var tasks = await _service.GetAllAsync(projectId);
-
         return Ok(tasks);
     }
 
+    // GET /api/tasks/3
     [HttpGet("{id:int}")]
     public async Task<ActionResult<TaskResponseDto>> GetById(int id)
     {
@@ -35,12 +37,15 @@ public class TasksController : ControllerBase
         return Ok(task);
     }
 
+    // POST /api/tasks
+    // Body مثال:
+    // { "title": "Setup DB", "description": "Create tables", "projectId": 1 }
     [HttpPost]
-    public async Task<ActionResult<TaskResponseDto>> Create(
-        CreateTaskDto dto)
+    public async Task<ActionResult<TaskResponseDto>> Create(CreateTaskDto dto)
     {
         var task = await _service.CreateAsync(dto);
 
+        // لو المشروع مش موجود نرجع 400 Bad Request
         if (task is null)
             return BadRequest(new { message = "Project does not exist." });
 
@@ -51,10 +56,9 @@ public class TasksController : ControllerBase
         );
     }
 
+    // PUT /api/tasks/3
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(
-        int id,
-        UpdateTaskDto dto)
+    public async Task<IActionResult> Update(int id, UpdateTaskDto dto)
     {
         var updated = await _service.UpdateAsync(id, dto);
 
@@ -64,6 +68,7 @@ public class TasksController : ControllerBase
         return NoContent();
     }
 
+    // DELETE /api/tasks/3  (Hard Delete)
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

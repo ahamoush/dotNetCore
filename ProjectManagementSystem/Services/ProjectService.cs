@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using ProjectManagementSystem.Data;
 using ProjectManagementSystem.DTOs.Projects;
@@ -7,53 +6,22 @@ using ProjectManagementSystem.Models;
 
 namespace ProjectManagementSystem.Services;
 
+// Service المشاريع: هنا منطق العمل (Business Logic) المتعلق بالمشاريع
+// Controller يستدعي هذا الكلاس، وهذا الكلاس يتعامل مع قاعدة البيانات عبر DbContext
 public class ProjectService : IProjectService
 {
-    private static readonly Expression<Func<Project, ProjectResponseDto>> ToResponse =
-        p => new ProjectResponseDto
-        {
-            Id = p.Id,
-            Name = p.Name,
-            Description = p.Description,
-            Status = p.Status,
-            CreatedAt = p.CreatedAt
-        };
-
     private readonly ApplicationDbContext _context;
 
+    // Dependency Injection: ASP.NET يمرر ApplicationDbContext تلقائياً
     public ProjectService(ApplicationDbContext context)
     {
         _context = context;
     }
 
-    public async Task<IEnumerable<ProjectResponseDto>> GetAllAsync()
+    // تحويل Entity (Project) إلى DTO (ProjectResponseDto)
+    // لماذا؟ عشان ما نرجع جدول الداتابيز مباشرة للـ API
+    private static ProjectResponseDto ToResponseDto(Project project)
     {
-        return await _context.Projects
-            .AsNoTracking()
-            .Select(ToResponse)
-            .ToListAsync();
-    }
-
-    public async Task<ProjectResponseDto?> GetByIdAsync(int id)
-    {
-        return await _context.Projects
-            .AsNoTracking()
-            .Where(p => p.Id == id)
-            .Select(ToResponse)
-            .FirstOrDefaultAsync();
-    }
-
-    public async Task<ProjectResponseDto> CreateAsync(CreateProjectDto dto)
-    {
-        var project = new Project
-        {
-            Name = dto.Name,
-            Description = dto.Description
-        };
-
-        _context.Projects.Add(project);
-        await _context.SaveChangesAsync();
-
         return new ProjectResponseDto
         {
             Id = project.Id,
@@ -64,6 +32,57 @@ public class ProjectService : IProjectService
         };
     }
 
+    // جلب كل المشاريع
+    public async Task<IEnumerable<ProjectResponseDto>> GetAllAsync()
+    {
+        // AsNoTracking = قراءة فقط (Read-only)
+        // مفيد لما مش هنعدّل البيانات، وبيخلي الاستعلام أخف
+        var projects = await _context.Projects
+            .AsNoTracking()
+            .ToListAsync();
+
+        // بعد ما البيانات جت من الداتابيز، نحولها إلى DTOs بطريقة بسيطة
+        var result = projects
+            .Select(ToResponseDto)
+            .ToList();
+
+        return result;
+    }
+
+    // جلب مشروع واحد بالـ Id
+    public async Task<ProjectResponseDto?> GetByIdAsync(int id)
+    {
+        var project = await _context.Projects
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        // لو مش موجود نرجع null، والـ Controller يرجع 404
+        if (project is null)
+            return null;
+
+        return ToResponseDto(project);
+    }
+
+    // إنشاء مشروع جديد
+    public async Task<ProjectResponseDto> CreateAsync(CreateProjectDto dto)
+    {
+        var project = new Project
+        {
+            Name = dto.Name,
+            Description = dto.Description
+        };
+
+        // Add = وضع الصف في حالة Added داخل Change Tracker
+        _context.Projects.Add(project);
+
+        // SaveChangesAsync = تنفيذ INSERT فعلياً في SQL Server
+        // CreatedAt يتم تعبئته تلقائياً داخل ApplicationDbContext.SaveChangesAsync
+        await _context.SaveChangesAsync();
+
+        return ToResponseDto(project);
+    }
+
+    // تعديل مشروع موجود
     public async Task<bool> UpdateAsync(int id, UpdateProjectDto dto)
     {
         var project = await _context.Projects
@@ -75,11 +94,15 @@ public class ProjectService : IProjectService
         project.Name = dto.Name;
         project.Description = dto.Description;
 
+        // EF Core يتتبع التغييرات ويعمل UPDATE عند SaveChanges
         await _context.SaveChangesAsync();
 
         return true;
     }
 
+    // Soft Delete:
+    // لا نحذف الصف من الداتابيز، بل نعلّمه كمحذوف (IsDeleted = true)
+    // Query Filter في DbContext يخفيه تلقائياً من نتائج البحث العادية
     public async Task<bool> DeleteAsync(int id)
     {
         var project = await _context.Projects
@@ -96,54 +119,71 @@ public class ProjectService : IProjectService
         return true;
     }
 
+    // بحث + فلترة + ترتيب + ترقيم صفحات (Pagination)
     public async Task<PagedResultDto<ProjectResponseDto>> GetProjectsAsync(ProjectQueryDto query)
     {
-        var projects = _context.Projects.AsNoTracking();
+        // نبدأ من جدول Projects (IQueryable = الاستعلام لسه ما اتنفذش)
+        var projectsQuery = _context.Projects.AsNoTracking();
 
-        // Searching
+        // 1) البحث بالاسم أو الوصف
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var search = query.Search.Trim();
-            projects = projects.Where(p =>
+
+            projectsQuery = projectsQuery.Where(p =>
                 p.Name.Contains(search) ||
                 p.Description.Contains(search));
         }
 
-        // Filtering
+        // 2) الفلترة حسب الحالة (Status)
         if (query.Status.HasValue)
         {
-            var status = query.Status.Value;
-            projects = projects.Where(p => p.Status == status);
+            projectsQuery = projectsQuery.Where(p => p.Status == query.Status.Value);
         }
 
-        // Sorting
+        // 3) الترتيب (Sorting) - كتبناه بـ if/else عشان يكون أوضح للمبتدئ
         var sortBy = string.IsNullOrWhiteSpace(query.SortBy)
             ? "name"
-            : query.SortBy.ToLowerInvariant();
+            : query.SortBy.Trim().ToLowerInvariant();
 
-        projects = sortBy switch
+        if (sortBy == "createdat")
         {
-            "createdat" => query.Descending
-                ? projects.OrderByDescending(p => p.CreatedAt)
-                : projects.OrderBy(p => p.CreatedAt),
+            if (query.Descending)
+                projectsQuery = projectsQuery.OrderByDescending(p => p.CreatedAt);
+            else
+                projectsQuery = projectsQuery.OrderBy(p => p.CreatedAt);
+        }
+        else if (sortBy == "duedate")
+        {
+            if (query.Descending)
+                projectsQuery = projectsQuery.OrderByDescending(p => p.DueDate);
+            else
+                projectsQuery = projectsQuery.OrderBy(p => p.DueDate);
+        }
+        else
+        {
+            // الافتراضي: الترتيب بالاسم
+            if (query.Descending)
+                projectsQuery = projectsQuery.OrderByDescending(p => p.Name);
+            else
+                projectsQuery = projectsQuery.OrderBy(p => p.Name);
+        }
 
-            "duedate" => query.Descending
-                ? projects.OrderByDescending(p => p.DueDate)
-                : projects.OrderBy(p => p.DueDate),
+        // عدد النتائج الكلي قبل الترقيم (مهم لحساب عدد الصفحات)
+        var totalCount = await projectsQuery.CountAsync();
 
-            _ => query.Descending
-                ? projects.OrderByDescending(p => p.Name)
-                : projects.OrderBy(p => p.Name)
-        };
-
-        var totalCount = await projects.CountAsync();
-
-        // Pagination
-        var items = await projects
+        // 4) Pagination:
+        // Page 1 => Skip(0)
+        // Page 2 => Skip(PageSize)
+        // Page 3 => Skip(PageSize * 2) ...
+        var projects = await projectsQuery
             .Skip((query.PageNumber - 1) * query.PageSize)
             .Take(query.PageSize)
-            .Select(ToResponse)
             .ToListAsync();
+
+        var items = projects
+            .Select(ToResponseDto)
+            .ToList();
 
         return new PagedResultDto<ProjectResponseDto>
         {

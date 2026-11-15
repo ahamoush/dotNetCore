@@ -1,3 +1,4 @@
+// Enum = قائمة قيم ثابتة ومفهومة بدل أرقام عشوائية
 public enum ProjectStatus
 {
     New = 1,

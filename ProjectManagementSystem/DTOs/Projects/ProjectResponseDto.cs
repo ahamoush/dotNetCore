@@ -1,5 +1,6 @@
 namespace ProjectManagementSystem.DTOs.Projects;
 
+// الشكل اللي بنرجعه للـ Client (مش Entity كامل)
 public class ProjectResponseDto
 {
     public int Id { get; set; }

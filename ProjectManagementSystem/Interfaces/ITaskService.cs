@@ -2,6 +2,7 @@ using ProjectManagementSystem.DTOs.Tasks;
 
 namespace ProjectManagementSystem.Interfaces;
 
+// العقد الخاص بخدمات المهام
 public interface ITaskService
 {
     Task<IEnumerable<TaskResponseDto>> GetAllAsync(int? projectId);

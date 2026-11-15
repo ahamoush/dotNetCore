@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProjectManagementSystem.DTOs.Projects;
 
+// البيانات المطلوبة لإنشاء مشروع جديد (من Body الطلب)
 public class CreateProjectDto
 {
     [Required]

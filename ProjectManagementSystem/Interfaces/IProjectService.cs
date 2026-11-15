@@ -2,6 +2,8 @@ using ProjectManagementSystem.DTOs.Projects;
 
 namespace ProjectManagementSystem.Interfaces;
 
+// العقد (Contract) الخاص بخدمات المشاريع
+// Controller يعتمد على الواجهة، والتنفيذ الفعلي في ProjectService
 public interface IProjectService
 {
     Task<IEnumerable<ProjectResponseDto>> GetAllAsync();

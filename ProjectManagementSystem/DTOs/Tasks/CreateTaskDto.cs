@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProjectManagementSystem.DTOs.Tasks;
 
+// بيانات إنشاء مهمة جديدة
 public class CreateTaskDto
 {
     [Required]
@@ -13,6 +14,7 @@ public class CreateTaskDto
 
     public DateTime? DueDate { get; set; }
 
+    // لازم يكون ProjectId صحيح وموجود في الداتابيز
     [Range(1, int.MaxValue)]
     public int ProjectId { get; set; }
 }

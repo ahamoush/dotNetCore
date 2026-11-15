@@ -6,6 +6,7 @@ using ProjectManagementSystem.Models;
 
 namespace ProjectManagementSystem.Services;
 
+// Service المهام: منطق العمل الخاص بالـ Tasks
 public class TaskService : ITaskService
 {
     private readonly ApplicationDbContext _context;
@@ -15,51 +16,59 @@ public class TaskService : ITaskService
         _context = context;
     }
 
-    public async Task<IEnumerable<TaskResponseDto>> GetAllAsync(
-        int? projectId)
+    // تحويل Entity إلى DTO
+    private static TaskResponseDto ToResponseDto(ProjectTask task)
+    {
+        return new TaskResponseDto
+        {
+            Id = task.Id,
+            Title = task.Title,
+            Description = task.Description,
+            IsCompleted = task.IsCompleted,
+            DueDate = task.DueDate,
+            ProjectId = task.ProjectId
+        };
+    }
+
+    // جلب كل المهام، مع إمكانية الفلترة بـ projectId
+    public async Task<IEnumerable<TaskResponseDto>> GetAllAsync(int? projectId)
     {
         var query = _context.Tasks.AsNoTracking();
 
+        // لو المستخدم بعت projectId نفلتر المهام الخاصة بالمشروع ده فقط
         if (projectId.HasValue)
         {
             query = query.Where(t => t.ProjectId == projectId.Value);
         }
 
-        return await query
-            .Select(t => new TaskResponseDto
-            {
-                Id = t.Id,
-                Title = t.Title,
-                Description = t.Description,
-                IsCompleted = t.IsCompleted,
-                DueDate = t.DueDate,
-                ProjectId = t.ProjectId
-            })
-            .ToListAsync();
+        var tasks = await query.ToListAsync();
+
+        return tasks
+            .Select(ToResponseDto)
+            .ToList();
     }
 
+    // جلب مهمة واحدة
     public async Task<TaskResponseDto?> GetByIdAsync(int id)
     {
-        return await _context.Tasks
+        var task = await _context.Tasks
             .AsNoTracking()
-            .Where(t => t.Id == id)
-            .Select(t => new TaskResponseDto
-            {
-                Id = t.Id,
-                Title = t.Title,
-                Description = t.Description,
-                IsCompleted = t.IsCompleted,
-                DueDate = t.DueDate,
-                ProjectId = t.ProjectId
-            })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (task is null)
+            return null;
+
+        return ToResponseDto(task);
     }
 
+    // إنشاء مهمة جديدة
+    // لازم المشروع يكون موجود قبل إضافة المهمة
     public async Task<TaskResponseDto?> CreateAsync(CreateTaskDto dto)
     {
         var projectExists = await _context.Projects
             .AnyAsync(p => p.Id == dto.ProjectId);
 
+        // null معناها فشل الإنشاء بسبب مشروع غير موجود
         if (!projectExists)
             return null;
 
@@ -72,22 +81,15 @@ public class TaskService : ITaskService
         };
 
         _context.Tasks.Add(task);
-
         await _context.SaveChangesAsync();
 
-        return new TaskResponseDto
-        {
-            Id = task.Id,
-            Title = task.Title,
-            Description = task.Description,
-            IsCompleted = task.IsCompleted,
-            DueDate = task.DueDate,
-            ProjectId = task.ProjectId
-        };
+        return ToResponseDto(task);
     }
 
+    // تعديل مهمة
     public async Task<bool> UpdateAsync(int id, UpdateTaskDto dto)
     {
+        // FindAsync يبحث بالـ Primary Key
         var task = await _context.Tasks.FindAsync(id);
 
         if (task is null)
@@ -103,6 +105,8 @@ public class TaskService : ITaskService
         return true;
     }
 
+    // حذف نهائي للمهمة (Hard Delete)
+    // ملاحظة: المشاريع Soft Delete، لكن المهام هنا بنحذفها فعلياً
     public async Task<bool> DeleteAsync(int id)
     {
         var task = await _context.Tasks.FindAsync(id);
@@ -111,7 +115,6 @@ public class TaskService : ITaskService
             return false;
 
         _context.Tasks.Remove(task);
-
         await _context.SaveChangesAsync();
 
         return true;

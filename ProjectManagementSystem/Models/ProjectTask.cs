@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProjectManagementSystem.Models;
 
+// جدول المهام
 public class ProjectTask
 {
     public int Id { get; set; }
@@ -17,9 +18,9 @@ public class ProjectTask
 
     public DateTime? DueDate { get; set; }
 
-    // Foreign Key
+    // Foreign Key: يربط المهمة بمشروع معين
     public int ProjectId { get; set; }
 
-    // Navigation Property
+    // Navigation Property: للوصول لكائن المشروع المرتبط
     public Project? Project { get; set; }
 }

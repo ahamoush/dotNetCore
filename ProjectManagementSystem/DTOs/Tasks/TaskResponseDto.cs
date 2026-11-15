@@ -1,5 +1,6 @@
 namespace ProjectManagementSystem.DTOs.Tasks;
 
+// شكل استجابة المهمة للـ Client
 public class TaskResponseDto
 {
     public int Id { get; set; }
