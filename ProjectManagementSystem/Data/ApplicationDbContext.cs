@@ -1,11 +1,13 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProjectManagementSystem.Models;
 
 namespace ProjectManagementSystem.Data;
 
-// ApplicationDbContext = الجسر بين الكود وقاعدة البيانات
-// كل DbSet يمثل جدول في SQL Server
-public class ApplicationDbContext : DbContext
+// IdentityDbContext يضيف جداول Identity تلقائياً:
+// AspNetUsers, AspNetRoles, AspNetUserRoles, AspNetUserClaims, AspNetRoleClaims, ...
+public class ApplicationDbContext
+    : IdentityDbContext<ApplicationUser, ApplicationRole, string>
 {
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options)
@@ -19,13 +21,12 @@ public class ApplicationDbContext : DbContext
     // جدول المهام
     public DbSet<ProjectTask> Tasks => Set<ProjectTask>();
 
-    // قبل ما EF يحفظ أي تغيير، نمر هنا لتعبئة تواريخ الإنشاء/التعديل تلقائياً
+    // قبل الحفظ: نعبّي CreatedAt / UpdatedAt للكيانات اللي ترث BaseEntity
     public override Task<int> SaveChangesAsync(
         CancellationToken cancellationToken = default)
     {
         var utcNow = DateTime.UtcNow;
 
-        // ChangeTracker يعرف كل الكيانات اللي اتعملت لها Add أو Update
         foreach (var entry in ChangeTracker.Entries<BaseEntity>())
         {
             if (entry.State == EntityState.Added)
@@ -41,16 +42,23 @@ public class ApplicationDbContext : DbContext
         return base.SaveChangesAsync(cancellationToken);
     }
 
-    // هنا نضبط قواعد الجداول والعلاقات والفلاتر
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // مهم جداً: يستدعي إعدادات جداول Identity
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            entity.Property(u => u.IsActive)
+                .HasDefaultValue(true);
+
+            entity.Property(u => u.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+        });
 
         modelBuilder.Entity<Project>(entity =>
         {
-            // Global Query Filter:
-            // أي استعلام على Projects يستبعد الصفوف المحذوفة Soft Delete تلقائياً
-            // يعني: WHERE IsDeleted = 0 بدون ما نكتب الشرط في كل Method
+            // Soft Delete filter
             entity.HasQueryFilter(p => !p.IsDeleted);
 
             entity.Property(p => p.Name)
@@ -61,9 +69,6 @@ public class ApplicationDbContext : DbContext
                 .HasMaxLength(500)
                 .IsRequired();
 
-            // القيمة الافتراضية لحالة المشروع = New
-            // HasSentinel: يخبر EF إن القيمة 0 معناها "لسه ما اتحددتش"
-            // عشان يستخدم Default Value من الداتابيز بدل ما يكتب 0
             entity.Property(p => p.Status)
                 .HasDefaultValue(ProjectStatus.New)
                 .HasSentinel((ProjectStatus)0);
@@ -71,16 +76,12 @@ public class ApplicationDbContext : DbContext
             entity.Property(p => p.IsDeleted)
                 .HasDefaultValue(false);
 
-            // علاقة One-to-Many:
-            // Project واحد له Tasks كثيرة
-            // Cascade: لو اتمسح المشروع، مهامه تتمسح معه
             entity.HasMany(p => p.Tasks)
                 .WithOne(t => t.Project)
                 .HasForeignKey(t => t.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // لو المشروع Soft Deleted، مهامه كمان ما تظهرش في الاستعلامات العادية
         modelBuilder.Entity<ProjectTask>()
             .HasQueryFilter(t => !t.Project!.IsDeleted);
     }

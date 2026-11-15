@@ -1,65 +1,55 @@
 @host = http://localhost:5149
+@token = {{login.response.body.$.token}}
 
-### جلب كل المشاريع
+### ========== AUTH ==========
+
+### Register new user (gets User role only)
+# @name register
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "userName": "junior1",
+  "email": "junior1@example.com",
+  "password": "Pass@123"
+}
+
+### Login as SuperAdmin (seeded user)
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "userNameOrEmail": "abd",
+  "password": "abd@123456"
+}
+
+### Logout note (client deletes token)
+POST {{host}}/api/auth/logout
+Authorization: Bearer {{token}}
+
+### ========== TEST AUTHORIZATION ==========
+
+### Public (no token)
+GET {{host}}/api/test/public
+
+### Authenticated
+GET {{host}}/api/test/authenticated
+Authorization: Bearer {{token}}
+
+### Admin or SuperAdmin
+GET {{host}}/api/test/admin
+Authorization: Bearer {{token}}
+
+### SuperAdmin only
+GET {{host}}/api/test/super-admin
+Authorization: Bearer {{token}}
+
+### CanManageUsers policy
+GET {{host}}/api/test/manage-users
+Authorization: Bearer {{token}}
+
+### ========== PROJECTS (unchanged) ==========
+
 GET {{host}}/api/projects/all
 Accept: application/json
-
-### بحث + فلترة + صفحات
-GET {{host}}/api/projects?search=web&status=1&pageNumber=1&pageSize=10&sortBy=name&descending=false
-Accept: application/json
-
-### جلب مشروع بالـ Id
-GET {{host}}/api/projects/1
-Accept: application/json
-
-### إنشاء مشروع
-POST {{host}}/api/projects
-Content-Type: application/json
-
-{
-  "name": "Learning API",
-  "description": "My first ASP.NET Core project"
-}
-
-### تعديل مشروع
-PUT {{host}}/api/projects/1
-Content-Type: application/json
-
-{
-  "name": "Learning API Updated",
-  "description": "Updated description"
-}
-
-### Soft Delete لمشروع
-DELETE {{host}}/api/projects/1
-
-### جلب كل المهام
-GET {{host}}/api/tasks
-Accept: application/json
-
-### جلب مهام مشروع معين
-GET {{host}}/api/tasks?projectId=1
-Accept: application/json
-
-### إنشاء مهمة
-POST {{host}}/api/tasks
-Content-Type: application/json
-
-{
-  "title": "Setup database",
-  "description": "Create tables with EF Core",
-  "projectId": 1
-}
-
-### تعديل مهمة
-PUT {{host}}/api/tasks/1
-Content-Type: application/json
-
-{
-  "title": "Setup database",
-  "description": "Done",
-  "isCompleted": true
-}
-
-### حذف مهمة
-DELETE {{host}}/api/tasks/1

@@ -18,6 +18,10 @@
 **/[Pp]ackages/*
 !**/[Pp]ackages/build/
 
+## Secrets (never commit)
+**/secrets.json
+appsettings.*.local.json
+
 ## OS
 Thumbs.db
 Desktop.ini
