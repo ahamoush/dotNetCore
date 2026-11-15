@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>المصطلحات — Project Management System</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">docs</div>
+        <div>
+          <strong>Project Management</strong>
+          <span>شرح هندسي</span>
+        </div>
+      </div>
+      <nav>
+        <a href="../index.html">البوابة</a>
+        <a href="overview.html">نظرة عامة</a>
+        <a href="architecture.html">العمارة</a>
+        <a href="modules.html">الوحدات</a>
+        <a href="data-model.html">نموذج البيانات</a>
+        <a href="apis.html">الواجهات البرمجية</a>
+        <a href="flows.html">التدفقات</a>
+        <a href="screens.html">الشاشات</a>
+        <a href="operations.html">التشغيل</a>
+        <a class="active" href="glossary.html">المصطلحات</a>
+      </nav>
+    </aside>
+    <main>
+      <header class="page-head">
+        <p class="kicker">Engineering brief</p>
+        <h1>المصطلحات</h1>
+        <p class="lede">المعاني كما تظهر في هذا المستودع، لا كما تُستخدم في منتجات إدارة مشاريع عامة.</p>
+      </header>
+
+      <table>
+        <thead><tr><th>المصطلح</th><th>في هذا الكود</th></tr></thead>
+        <tbody>
+          <tr><td><code>Project</code></td><td>كيان في <code>Models/Project.cs</code> يرث <code>BaseEntity</code>. صف في جدول <code>Projects</code>.</td></tr>
+          <tr><td><code>ProjectTask</code></td><td>كيان المهمة. اسم الجدول <code>Tasks</code> عبر <code>DbSet&lt;ProjectTask&gt; Tasks</code>. ليس <code>System.Threading.Tasks.Task</code>.</td></tr>
+          <tr><td><code>ProjectStatus</code></td><td>تعداد: New، InProgress، Completed، OnHold، Cancelled بقيم 1 إلى 5.</td></tr>
+          <tr><td><code>BaseEntity</code></td><td>أساس المعرّف وأوقات التدقيق وعلمي الحذف. ترثه المشاريع فقط.</td></tr>
+          <tr><td>حذف ناعم</td><td><code>IsDeleted</code> و<code>DeletedAt</code> على المشروع. الاستعلامات تخفي الصف بدل حذفه.</td></tr>
+          <tr><td>حذف فعلي</td><td><code>TaskService.DeleteAsync</code> يستدعي <code>Remove</code> على المهمة.</td></tr>
+          <tr><td><code>ProjectQueryDto</code></td><td>معاملات بحث وتصفية وترتيب وترقيم لقائمة المشاريع. ليس كياناً مخزناً.</td></tr>
+          <tr><td><code>PagedResultDto</code></td><td>غلاف الصفحة: العناصر والعدد الكلي ورقم الصفحة وحجمها وعدد الصفحات المحسوب.</td></tr>
+          <tr><td><code>ToResponse</code></td><td>تعبير ثابت في <code>ProjectService</code> يحوّل <code>Project</code> إلى <code>ProjectResponseDto</code> داخل الاستعلام.</td></tr>
+          <tr><td>مرشح الاستعلام</td><td><code>HasQueryFilter</code> في <code>ApplicationDbContext</code>. يُطبَّق تلقائياً على استعلامات <code>Projects</code> و<code>Tasks</code>.</td></tr>
+          <tr><td><code>HasSentinel</code></td><td>على <code>Status</code> بالقيمة 0 حتى يميّز EF «لم تُضبط» عن القيمة المخزنة. التعداد يبدأ من 1.</td></tr>
+          <tr><td>Scoped</td><td>عمر <code>ProjectService</code> و<code>TaskService</code> و<code>DbContext</code>: نسخة لكل طلب HTTP.</td></tr>
+        </tbody>
+      </table>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

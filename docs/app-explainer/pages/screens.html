@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>الشاشات — Project Management System</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">docs</div>
+        <div>
+          <strong>Project Management</strong>
+          <span>شرح هندسي</span>
+        </div>
+      </div>
+      <nav>
+        <a href="../index.html">البوابة</a>
+        <a href="overview.html">نظرة عامة</a>
+        <a href="architecture.html">العمارة</a>
+        <a href="modules.html">الوحدات</a>
+        <a href="data-model.html">نموذج البيانات</a>
+        <a href="apis.html">الواجهات البرمجية</a>
+        <a href="flows.html">التدفقات</a>
+        <a class="active" href="screens.html">الشاشات</a>
+        <a href="operations.html">التشغيل</a>
+        <a href="glossary.html">المصطلحات</a>
+      </nav>
+    </aside>
+    <main>
+      <header class="page-head">
+        <p class="kicker">Engineering brief</p>
+        <h1>الشاشات</h1>
+        <p class="lede">لا صفحات Razor ولا Blazor ولا واجهة أمامية في هذا المستودع. الشاشة الوحيدة هي Swagger في بيئة التطوير.</p>
+      </header>
+
+      <table>
+        <thead>
+          <tr><th>المسار</th><th>من يفتحها</th><th>ماذا تعرض</th><th>المصدر</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>/swagger</code></td>
+            <td>أي زائر طالما <code>ASPNETCORE_ENVIRONMENT=Development</code></td>
+            <td>توثيق الأفعال وتجربة <code>api/Projects</code> و<code>api/Tasks</code></td>
+            <td><code>app.UseSwaggerUI()</code> داخل شرط التطوير في <code>Program.cs</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout fact"><strong>من الكود</strong> <code>launchBrowser</code> قيمته <code>false</code> في ملفي <code>http</code> و<code>https</code>، فالتشغيل لا يفتح المتصفح وحده. حزمة الواجهة <code>Swashbuckle.AspNetCore</code> 10.3.1.</div>
+      <p>خارج التطوير لا يُستدعى <code>UseSwagger</code> ولا <code>UseSwaggerUI</code>، فتبقى المسارات البرمجية فقط.</p>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

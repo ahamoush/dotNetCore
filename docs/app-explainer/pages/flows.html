@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>التدفقات — Project Management System</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">docs</div>
+        <div>
+          <strong>Project Management</strong>
+          <span>شرح هندسي</span>
+        </div>
+      </div>
+      <nav>
+        <a href="../index.html">البوابة</a>
+        <a href="overview.html">نظرة عامة</a>
+        <a href="architecture.html">العمارة</a>
+        <a href="modules.html">الوحدات</a>
+        <a href="data-model.html">نموذج البيانات</a>
+        <a href="apis.html">الواجهات البرمجية</a>
+        <a class="active" href="flows.html">التدفقات</a>
+        <a href="screens.html">الشاشات</a>
+        <a href="operations.html">التشغيل</a>
+        <a href="glossary.html">المصطلحات</a>
+      </nav>
+    </aside>
+    <main>
+      <header class="page-head">
+        <p class="kicker">Engineering brief</p>
+        <h1>التدفقات</h1>
+        <p class="lede">ستة مسارات موجودة في الكود: إنشاء مشروع، قائمة مرقّمة، حذف ناعم، إنشاء مهمة، حذف مهمة، واستثناء غير متوقع.</p>
+      </header>
+
+      <h2>1. إنشاء مشروع</h2>
+      <p>المُطلِق: <code>POST /api/Projects</code> بجسم اسم ووصف صالحين.</p>
+      <div class="diagram flow">
+        <span class="box">عميل</span><span class="arrow">←</span>
+        <span class="box">ProjectsController.Create</span><span class="arrow">←</span>
+        <span class="box">ProjectService.CreateAsync</span><span class="arrow">←</span>
+        <span class="box">Projects.Add</span><span class="arrow">←</span>
+        <span class="box">SaveChangesAsync</span><span class="arrow">←</span>
+        <span class="box">201</span>
+      </div>
+      <ol>
+        <li>المتحكم يمرر <code>CreateProjectDto</code> إلى <code>IProjectService.CreateAsync</code>.</li>
+        <li>الخدمة تبني <code>Project</code> بالاسم والوصف فقط. الحالة تبقى القيمة الابتدائية <code>New</code>.</li>
+        <li><code>SaveChangesAsync</code> في السياق يضع <code>CreatedAt</code> لأن الحالة <code>Added</code>.</li>
+        <li>المتحكم يرجع 201 عبر <code>CreatedAtAction(GetById)</code> مع DTO فيه المعرّف والاسم والوصف والحالة ووقت الإنشاء.</li>
+      </ol>
+      <p>مسار الفشل: اسم أقصر من 3 أو أطول من 100، أو وصف أطول من 500، يرفضه تحقق النموذج قبل الخدمة.</p>
+
+      <h2>2. قائمة المشاريع المرقّمة</h2>
+      <p>المُطلِق: <code>GET /api/Projects</code> مع استعلام.</p>
+      <div class="diagram flow">
+        <span class="box">عميل</span><span class="arrow">←</span>
+        <span class="box">فحص الصفحة والحجم</span><span class="arrow">←</span>
+        <span class="box">بحث ثم حالة ثم ترتيب</span><span class="arrow">←</span>
+        <span class="box">Count ثم Skip/Take</span><span class="arrow">←</span>
+        <span class="box">PagedResultDto</span>
+      </div>
+      <ol>
+        <li>إذا <code>PageNumber &lt; 1</code> أو <code>PageSize</code> خارج 1–100 يرجع المتحكم 400 <code>Invalid pagination parameters.</code></li>
+        <li><code>GetProjectsAsync</code> يبدأ من <code>Projects.AsNoTracking</code>. مرشح الحذف الناعم مطبَّق، فالمشاريع المحذوفة لا تدخل.</li>
+        <li>إن وُجد <code>Search</code> يُقص ويُطابَق داخل <code>Name</code> أو <code>Description</code>.</li>
+        <li>إن وُجد <code>Status</code> تُصفّى المساواة.</li>
+        <li><code>SortBy</code> بعد التصغير: <code>createdat</code> أو <code>duedate</code>، وغيرهما يرتّب بالاسم. <code>Descending</code> يعكس الاتجاه.</li>
+        <li>يُحسب العدد الكلي ثم تُؤخذ الصفحة وتُحوَّل إلى <code>ProjectResponseDto</code>.</li>
+      </ol>
+      <p>مسار فارغ: لا صفوف مطابقة تُرجع 200 مع <code>Items</code> فارغة و<code>TotalCount = 0</code>. لا 404.</p>
+
+      <h2>3. حذف مشروع</h2>
+      <p>المُطلِق: <code>DELETE /api/Projects/{id}</code>.</p>
+      <div class="diagram flow">
+        <span class="box">عميل</span><span class="arrow">←</span>
+        <span class="box">DeleteAsync</span><span class="arrow">←</span>
+        <span class="box">IsDeleted و DeletedAt</span><span class="arrow">←</span>
+        <span class="box">204</span>
+      </div>
+      <ol>
+        <li>الخدمة تبحث بالمعرّف. مرشح الاستعلام يتجاهل المحذوف سلفاً، فتكرار الحذف يرجع <code>false</code> ثم 404.</li>
+        <li>إن وُجد الصف: <code>IsDeleted = true</code> و<code>DeletedAt = DateTime.UtcNow</code> ثم حفظ. لا <code>Remove</code>.</li>
+        <li>بعدها تختفي المهام التابعة من استعلامات <code>TaskService</code> بسبب مرشح <code>!t.Project!.IsDeleted</code>.</li>
+      </ol>
+
+      <h2>4. إنشاء مهمة</h2>
+      <p>المُطلِق: <code>POST /api/Tasks</code>.</p>
+      <div class="diagram flow">
+        <span class="box">عميل</span><span class="arrow">←</span>
+        <span class="box">TasksController.Create</span><span class="arrow">←</span>
+        <span class="box">Projects.AnyAsync</span><span class="arrow">←</span>
+        <span class="box">Tasks.Add</span><span class="arrow">←</span>
+        <span class="box">201 أو 400</span>
+      </div>
+      <ol>
+        <li>الخدمة تتحقق أن <code>ProjectId</code> يطابق مشروعاً غير محذوف.</li>
+        <li>إذا لا يوجد مشروع ترجع <code>null</code> والمتحكم يرد 400 <code>Project does not exist.</code></li>
+        <li>إذا وُجد تُنشأ <code>ProjectTask</code> بالعنوان والوصف وتاريخ الاستحقاق ومعرّف المشروع. <code>IsCompleted</code> يبقى <code>false</code>.</li>
+        <li>المهمة لا ترث <code>BaseEntity</code>، لذلك <code>SaveChangesAsync</code> لا يكتب لها وقت إنشاء.</li>
+      </ol>
+
+      <h2>5. حذف مهمة</h2>
+      <p>المُطلِق: <code>DELETE /api/Tasks/{id}</code>.</p>
+      <div class="diagram flow">
+        <span class="box">عميل</span><span class="arrow">←</span>
+        <span class="box">FindAsync</span><span class="arrow">←</span>
+        <span class="box">Remove</span><span class="arrow">←</span>
+        <span class="box">204</span>
+      </div>
+      <ol>
+        <li><code>FindAsync</code> يحمّل المهمة. إن غابت أو كانت تابعة لمشروع محذوف (المرشح) ترجع الخدمة <code>false</code> ثم 404.</li>
+        <li>إن وُجدت يُحذف الصف من الجدول <code>Tasks</code>. هذا حذف فعلي، بخلاف المشروع.</li>
+      </ol>
+
+      <h2>6. استثناء غير متوقع</h2>
+      <p>المُطلِق: أي استثناء يفلت من الفعل، مثل فشل الاتصال بقاعدة البيانات.</p>
+      <div class="diagram flow">
+        <span class="box">طلب</span><span class="arrow">←</span>
+        <span class="box">ExceptionHandlingMiddleware</span><span class="arrow">←</span>
+        <span class="box">LogError</span><span class="arrow">←</span>
+        <span class="box">500 JSON</span>
+      </div>
+      <ol>
+        <li>الوسيط يستدعي <code>_next</code> داخل <code>try</code>.</li>
+        <li>يسجّل <code>Unexpected error occurred.</code></li>
+        <li>إن لم يبدأ الرد: يمسحه، يضع 500 و<code>application/json</code>، ويكتب رسالة عامة بلا تفاصيل الاستثناء.</li>
+      </ol>
+      <div class="callout fact"><strong>من الكود</strong> لا مسار تسجيل دخول. 401 و403 غير مُنتَجين في المتحكمات.</div>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

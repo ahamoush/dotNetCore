@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>البوابة — Project Management System</title>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">docs</div>
+        <div>
+          <strong>Project Management</strong>
+          <span>شرح هندسي</span>
+        </div>
+      </div>
+      <nav>
+        <a class="active" href="index.html">البوابة</a>
+        <a href="pages/overview.html">نظرة عامة</a>
+        <a href="pages/architecture.html">العمارة</a>
+        <a href="pages/modules.html">الوحدات</a>
+        <a href="pages/data-model.html">نموذج البيانات</a>
+        <a href="pages/apis.html">الواجهات البرمجية</a>
+        <a href="pages/flows.html">التدفقات</a>
+        <a href="pages/screens.html">الشاشات</a>
+        <a href="pages/operations.html">التشغيل</a>
+        <a href="pages/glossary.html">المصطلحات</a>
+      </nav>
+    </aside>
+    <main>
+      <header class="page-head">
+        <p class="kicker">Engineering brief</p>
+        <h1>Project Management System</h1>
+        <p class="lede">واجهة ويب واحدة تحفظ المشاريع ومهامها في SQL Server. الطلب يدخل من المتحكم، يمر بالخدمة، ثم يكتب أو يقرأ عبر <code>ApplicationDbContext</code>.</p>
+      </header>
+
+      <p>
+        <span class="badge">C#</span>
+        <span class="badge">ASP.NET Core</span>
+        <span class="badge">net10.0</span>
+        <span class="badge">EF Core</span>
+        <span class="badge">SQL Server</span>
+        <span class="badge">Swagger</span>
+      </p>
+
+      <h2>هرمية الطلب</h2>
+      <div class="diagram stack">
+        <div class="layer"><b>عميل</b> — متصفح أو Swagger أو أي عميل HTTP على <code>http://localhost:5149</code></div>
+        <div class="layer"><b>مدخل</b> — <code>Program.cs</code> يبني الخدمات وخط الأنابيب</div>
+        <div class="layer"><b>حماية</b> — <code>Middleware/ExceptionHandlingMiddleware.cs</code> يلتقط الاستثناء غير المتوقع ويرد 500</div>
+        <div class="layer"><b>عرض</b> — <code>Controllers/ProjectsController.cs</code> و<code>Controllers/TasksController.cs</code></div>
+        <div class="layer"><b>عقد</b> — <code>Interfaces/IProjectService.cs</code> و<code>Interfaces/ITaskService.cs</code></div>
+        <div class="layer"><b>تطبيق</b> — <code>Services/ProjectService.cs</code> و<code>Services/TaskService.cs</code></div>
+        <div class="layer"><b>بيانات</b> — <code>Data/ApplicationDbContext.cs</code> ثم جداول <code>Projects</code> و<code>Tasks</code></div>
+      </div>
+
+      <h2>شجرة الملفات التي تهم</h2>
+      <pre>ProjectManagementSystem/
+├─ Program.cs                          تركيب الخدمات وخط الأنابيب
+├─ ProjectManagementSystem.csproj      الحزم: EF SqlServer، Swagger، OpenApi
+├─ appsettings.json                    مفتاح الاتصال والسجلات
+├─ appsettings.Development.json        مستوى السجل في التطوير
+├─ Properties/launchSettings.json      منافذ http و https
+├─ Controllers/
+│  ├─ ProjectsController.cs            api/Projects
+│  └─ TasksController.cs               api/Tasks
+├─ Interfaces/
+│  ├─ IProjectService.cs
+│  └─ ITaskService.cs
+├─ Services/
+│  ├─ ProjectService.cs
+│  └─ TaskService.cs
+├─ DTOs/
+│  ├─ PagedResultDto.cs
+│  ├─ ProjectQueryDto.cs
+│  ├─ Projects/  Create, Update, Response
+│  └─ Tasks/     Create, Update, Response
+├─ Models/
+│  ├─ BaseEntity.cs                    معرّف وتدقيق وحذف ناعم
+│  ├─ Project.cs
+│  ├─ ProjectTask.cs
+│  └─ ProjectStatus.cs
+├─ Data/ApplicationDbContext.cs
+├─ Middleware/ExceptionHandlingMiddleware.cs
+├─ Exceptions/NotFoundException.cs     ملف فارغ وغير مستدعى
+└─ Migrations/                         InitialCreate ثم حقول التدقيق والاستعلام</pre>
+
+      <h2>أقسام الشرح</h2>
+      <div class="grid">
+        <a class="card" href="pages/overview.html"><h3>نظرة عامة</h3><p>ماذا يفعل النظام، حدوده، ومن يستدعيه.</p></a>
+        <a class="card" href="pages/architecture.html"><h3>العمارة</h3><p>اتجاه الاعتماد ومن يتحدث مع من.</p></a>
+        <a class="card" href="pages/modules.html"><h3>الوحدات</h3><p>كل مجلد: لماذا يوجد وماذا يستقبل.</p></a>
+        <a class="card" href="pages/data-model.html"><h3>نموذج البيانات</h3><p>المشروع، المهمة، الحذف الناعم، والعلاقة 1 إلى كثير.</p></a>
+        <a class="card" href="pages/apis.html"><h3>الواجهات البرمجية</h3><p>كل مسار HTTP: المدخل والمخرج وملف المصدر.</p></a>
+        <a class="card" href="pages/flows.html"><h3>التدفقات</h3><p>إنشاء مشروع، بحث مرقّم، حذف، ومسار الخطأ.</p></a>
+        <a class="card" href="pages/screens.html"><h3>الشاشات</h3><p>لا واجهة مستخدم. Swagger هو الشاشة الوحيدة.</p></a>
+        <a class="card" href="pages/operations.html"><h3>التشغيل</h3><p>كيف يُشغَّل محلياً وأسماء مفاتيح الإعداد.</p></a>
+        <a class="card" href="pages/glossary.html"><h3>المصطلحات</h3><p>المصطلحات كما هي مستخدمة في هذا المستودع.</p></a>
+      </div>
+
+      <h2>تشغيل محلي</h2>
+      <pre>cd ProjectManagementSystem
+dotnet run --launch-profile http</pre>
+      <p class="muted">الملف التعريفي <code>http</code> يستمع على <code>http://localhost:5149</code>. واجهة Swagger على <code>/swagger</code> وتُفعَّل فقط عندما تكون البيئة <code>Development</code>.</p>
+    </main>
+  </div>
+  <script src="assets/app.js"></script>
+</body>
+</html>

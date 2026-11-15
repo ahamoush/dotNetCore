@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>نموذج البيانات — Project Management System</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">docs</div>
+        <div>
+          <strong>Project Management</strong>
+          <span>شرح هندسي</span>
+        </div>
+      </div>
+      <nav>
+        <a href="../index.html">البوابة</a>
+        <a href="overview.html">نظرة عامة</a>
+        <a href="architecture.html">العمارة</a>
+        <a href="modules.html">الوحدات</a>
+        <a href="data-model.html" class="active">نموذج البيانات</a>
+        <a href="apis.html">الواجهات البرمجية</a>
+        <a href="flows.html">التدفقات</a>
+        <a href="screens.html">الشاشات</a>
+        <a href="operations.html">التشغيل</a>
+        <a href="glossary.html">المصطلحات</a>
+      </nav>
+    </aside>
+    <main>
+      <header class="page-head">
+        <p class="kicker">Engineering brief</p>
+        <h1>نموذج البيانات</h1>
+        <p class="lede">جدولان: <code>Projects</code> و<code>Tasks</code>. المشروع الواحد له مهام كثيرة، والمهمة تشير إلى مشروع واحد.</p>
+      </header>
+
+      <div class="diagram flow">
+        <span class="box">Projects 1</span><span class="arrow">←</span>
+        <span class="box">Tasks *</span>
+      </div>
+      <p class="muted">المفتاح الأجنبي <code>Tasks.ProjectId</code>، الفهرس <code>IX_Tasks_ProjectId</code>، والسلوك عند الحذف الفعلي من القاعدة <code>Cascade</code>.</p>
+
+      <h2>Projects</h2>
+      <p>الكيان <code>Project</code> في <code>Models/Project.cs</code>، والجدول <code>Projects</code>. يرث أعمدة <code>BaseEntity</code>.</p>
+      <table>
+        <thead><tr><th>الحقل</th><th>ملاحظة</th></tr></thead>
+        <tbody>
+          <tr><td><code>Id</code></td><td>هوية SQL تبدأ من 1</td></tr>
+          <tr><td><code>Name</code></td><td>مطلوب، أقصى طول 100 في <code>OnModelCreating</code></td></tr>
+          <tr><td><code>Description</code></td><td>مطلوب، أقصى طول 500</td></tr>
+          <tr><td><code>Status</code></td><td>عدد صحيح. الافتراضي في النموذج <code>ProjectStatus.New</code> (1). <code>HasSentinel(0)</code></td></tr>
+          <tr><td><code>StartDate</code></td><td>مخزّن. الإنشاء في <code>ProjectService</code> لا يعيّنه، والاستجابة لا ترجعه</td></tr>
+          <tr><td><code>DueDate</code></td><td>اختياري. يُستخدم في الترتيب <code>sortBy=duedate</code> ولا يُرجَع في <code>ProjectResponseDto</code></td></tr>
+          <tr><td><code>CreatedAt</code></td><td>يُضبط في <code>SaveChangesAsync</code> عند <code>Added</code> بوقت UTC</td></tr>
+          <tr><td><code>UpdatedAt</code></td><td>يُضبط عند <code>Modified</code></td></tr>
+          <tr><td><code>IsDeleted</code></td><td>افتراضي <code>false</code>. مرشح الاستعلام يخفي <code>true</code></td></tr>
+          <tr><td><code>DeletedAt</code></td><td>يُكتب يدوياً في <code>DeleteAsync</code> بـ <code>DateTime.UtcNow</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Tasks</h2>
+      <p>الكيان <code>ProjectTask</code> في <code>Models/ProjectTask.cs</code>، والجدول <code>Tasks</code>. لا أعمدة تدقيق ولا حذف ناعم على الصف نفسه.</p>
+      <table>
+        <thead><tr><th>الحقل</th><th>ملاحظة</th></tr></thead>
+        <tbody>
+          <tr><td><code>Id</code></td><td>هوية</td></tr>
+          <tr><td><code>Title</code></td><td>Data Annotation: مطلوب، 3–150</td></tr>
+          <tr><td><code>Description</code></td><td>حتى 1000</td></tr>
+          <tr><td><code>IsCompleted</code></td><td>افتراضي <code>false</code> على الكيان</td></tr>
+          <tr><td><code>DueDate</code></td><td>اختياري</td></tr>
+          <tr><td><code>ProjectId</code></td><td>مطلوب. التنقل <code>Project</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2>العلاقات وقواعد الإخفاء</h2>
+      <table>
+        <thead><tr><th>القاعدة</th><th>أين</th></tr></thead>
+        <tbody>
+          <tr><td>1 إلى كثير</td><td><code>Project.Tasks</code> مع <code>ProjectTask.Project</code></td></tr>
+          <tr><td>إخفاء المشروع المحذوف</td><td><code>HasQueryFilter(p =&gt; !p.IsDeleted)</code></td></tr>
+          <tr><td>إخفاء مهام المشروع المحذوف</td><td><code>HasQueryFilter(t =&gt; !t.Project!.IsDeleted)</code> على <code>ProjectTask</code></td></tr>
+          <tr><td>حذف فعلي للمشروع من القاعدة</td><td><code>OnDelete(DeleteBehavior.Cascade)</code> يحذف المهام</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout fact"><strong>من الكود</strong> مسار الحذف في الواجهة لا يحذف صف المشروع. <code>ProjectService.DeleteAsync</code> يضع <code>IsDeleted = true</code>. لذلك الحذف المتتالي في النموذج لا يعمل على هذا المسار. <code>TaskService.DeleteAsync</code> يستدعي <code>Remove</code> فيحذف صف المهمة.</div>
+      <div class="callout fact"><strong>من الكود</strong> لا مستأجر متعدد، ولا أعمدة مستخدم أنشأ أو عدّل. التدقيق زمني فقط وعلى المشروع لأنه يرث <code>BaseEntity</code>.</div>
+
+      <h2>ما لا يخرج في الاستجابة</h2>
+      <p><code>ProjectResponseDto</code> يسقط <code>StartDate</code> و<code>DueDate</code> و<code>UpdatedAt</code> و<code>IsDeleted</code> و<code>DeletedAt</code> وقائمة المهام. <code>TaskResponseDto</code> يسقط كيان المشروع ويبقي <code>ProjectId</code>.</p>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

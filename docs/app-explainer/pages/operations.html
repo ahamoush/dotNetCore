@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>التشغيل — Project Management System</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">docs</div>
+        <div>
+          <strong>Project Management</strong>
+          <span>شرح هندسي</span>
+        </div>
+      </div>
+      <nav>
+        <a href="../index.html">البوابة</a>
+        <a href="overview.html">نظرة عامة</a>
+        <a href="architecture.html">العمارة</a>
+        <a href="modules.html">الوحدات</a>
+        <a href="data-model.html">نموذج البيانات</a>
+        <a href="apis.html">الواجهات البرمجية</a>
+        <a href="flows.html">التدفقات</a>
+        <a href="screens.html">الشاشات</a>
+        <a class="active" href="operations.html">التشغيل</a>
+        <a href="glossary.html">المصطلحات</a>
+      </nav>
+    </aside>
+    <main>
+      <header class="page-head">
+        <p class="kicker">Engineering brief</p>
+        <h1>التشغيل</h1>
+        <p class="lede">التشغيل المحلي أمر <code>dotnet run</code> من مجلد المشروع. لا Docker ولا فحص صحة ولا عامل خلفية في المستودع.</p>
+      </header>
+
+      <h2>تشغيل محلي</h2>
+      <p>من <code>Properties/launchSettings.json</code>:</p>
+      <table>
+        <thead><tr><th>ملف التعريف</th><th>العنوان</th><th>البيئة</th></tr></thead>
+        <tbody>
+          <tr><td><code>http</code></td><td><code>http://localhost:5149</code></td><td><code>Development</code></td></tr>
+          <tr><td><code>https</code></td><td><code>https://localhost:7187</code> و<code>http://localhost:5149</code></td><td><code>Development</code></td></tr>
+        </tbody>
+      </table>
+      <pre>cd ProjectManagementSystem
+dotnet run --launch-profile http</pre>
+      <p>Swagger بعد الإقلاع: <code>http://localhost:5149/swagger</code>.</p>
+      <div class="callout fact"><strong>من الكود</strong> ملف التعريف <code>http</code> لا يعرّف منفذ HTTPS. عندها يسجّل <code>HttpsRedirectionMiddleware</code> تحذيراً: فشل تحديد منفذ HTTPS لإعادة التوجيه. الاستماع على 5149 يبقى قائماً.</div>
+
+      <h2>مفاتيح الإعداد</h2>
+      <p>الأسماء فقط. القيم السرية وسلسلة الاتصال غير منسوخة هنا.</p>
+      <table>
+        <thead><tr><th>المفتاح</th><th>الملف</th><th>ماذا يتحكم</th></tr></thead>
+        <tbody>
+          <tr><td><code>ConnectionStrings:DefaultConnection</code></td><td><code>appsettings.json</code></td><td>سلسلة SQL Server التي يقرأها <code>UseSqlServer</code> في <code>Program.cs</code></td></tr>
+          <tr><td><code>Logging:LogLevel:Default</code></td><td>الاثنان</td><td>مستوى السجل العام. القيمة المكتوبة <code>Information</code></td></tr>
+          <tr><td><code>Logging:LogLevel:Microsoft.AspNetCore</code></td><td><code>appsettings.json</code> و<code>appsettings.Development.json</code></td><td>مستوى سجلات الإطار. القيمة في الملفين <code>Warning</code></td></tr>
+          <tr><td><code>AllowedHosts</code></td><td><code>appsettings.json</code></td><td>رؤوس المضيف المسموحة</td></tr>
+          <tr><td><code>ASPNETCORE_ENVIRONMENT</code></td><td><code>launchSettings.json</code></td><td>يفعّل Swagger عندما تساوي <code>Development</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2>المصادقة</h2>
+      <p>لا Cookie ولا JWT ولا Windows auth في التكوين. الوسيط <code>UseAuthorization</code> موجود بلا مخطط.</p>
+
+      <h2>السجلات</h2>
+      <p>مزود السجل الافتراضي للإطار. الكتابة الصريحة الوحيدة في التطبيق هي <code>LogError</code> داخل <code>ExceptionHandlingMiddleware</code> عند استثناء غير متوقع. لا Serilog ولا ملف سجل مخصص.</p>
+
+      <h2>الصحة والنشر</h2>
+      <p>لا <code>MapHealthChecks</code>، ولا <code>Dockerfile</code>، ولا سكربت نشر في المستودع. تطبيق الهجرات موجود كملفات C# تحت <code>Migrations/</code>؛ لا أمر ترحيل تلقائي داخل <code>Program.cs</code> (لا <code>Database.Migrate</code>).</p>
+      <div class="callout inferred"><strong>استنتاج</strong> قاعدة البيانات تُحدَّث بأمر خارجي مثل <code>dotnet ef database update</code>، لأن الإقلاع لا يطبّق الهجرات بنفسه. الأمر نفسه غير موثّق داخل المستودع.</div>
+
+      <h2>حزم ذات تحذير</h2>
+      <div class="callout fact"><strong>من الكود</strong> بناء المشروع يُظهر تحذيري <code>NU1902</code> و<code>NU1903</code> على الحزمة العابرة <code>System.Security.Cryptography.Pkcs</code> 9.0.11. المشروع لا يشير إليها مباشرة في <code>csproj</code>.</div>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

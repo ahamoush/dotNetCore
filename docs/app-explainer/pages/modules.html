@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>الوحدات — Project Management System</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">docs</div>
+        <div>
+          <strong>Project Management</strong>
+          <span>شرح هندسي</span>
+        </div>
+      </div>
+      <nav>
+        <a href="../index.html">البوابة</a>
+        <a href="overview.html">نظرة عامة</a>
+        <a href="architecture.html">العمارة</a>
+        <a class="active" href="modules.html">الوحدات</a>
+        <a href="data-model.html">نموذج البيانات</a>
+        <a href="apis.html">الواجهات البرمجية</a>
+        <a href="flows.html">التدفقات</a>
+        <a href="screens.html">الشاشات</a>
+        <a href="operations.html">التشغيل</a>
+        <a href="glossary.html">المصطلحات</a>
+      </nav>
+    </aside>
+    <main>
+      <header class="page-head">
+        <p class="kicker">Engineering brief</p>
+        <h1>الوحدات</h1>
+        <p class="lede">كل مجلد تحت <code>ProjectManagementSystem</code> وحدة واحدة. لا سياقات أعمال منفصلة سوى المشروع والمهمة.</p>
+      </header>
+
+      <h2>Controllers</h2>
+      <p>المسار <code>Controllers/</code>. يستقبل HTTP ويتحقق من شكل بعض المدخلات ثم يترجم نتيجة الخدمة إلى رمز حالة.</p>
+      <table>
+        <thead><tr><th>النوع العام</th><th>يعتمد على</th><th>لا يعتمد على</th></tr></thead>
+        <tbody>
+          <tr><td><code>ProjectsController</code></td><td><code>IProjectService</code></td><td><code>DbContext</code>، كيانات</td></tr>
+          <tr><td><code>TasksController</code></td><td><code>ITaskService</code></td><td><code>DbContext</code>، كيانات</td></tr>
+        </tbody>
+      </table>
+      <p>المسار الأساسي <code>api/[controller]</code> فيصبح <code>api/Projects</code> و<code>api/Tasks</code>.</p>
+
+      <h2>Interfaces</h2>
+      <p>المسار <code>Interfaces/</code>. عقد الاستدعاء الذي يسجله <code>Program.cs</code>.</p>
+      <ul>
+        <li><code>IProjectService</code>: قراءة الكل، قراءة بالمعرّف، إنشاء، تعديل، حذف، وقائمة مرقّمة.</li>
+        <li><code>ITaskService</code>: قراءة مع تصفية اختيارية بـ <code>projectId</code>، قراءة بالمعرّف، إنشاء، تعديل، حذف.</li>
+      </ul>
+
+      <h2>Services</h2>
+      <p>المسار <code>Services/</code>. مكان قواعد القراءة والكتابة.</p>
+      <table>
+        <thead><tr><th>الصنف</th><th>لماذا يوجد</th><th>يخرج إلى</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>ProjectService</code></td>
+            <td>بحث بالاسم أو الوصف، تصفية بالحالة، ترتيب، ترقيم، وحذف ناعم</td>
+            <td><code>ApplicationDbContext.Projects</code></td>
+          </tr>
+          <tr>
+            <td><code>TaskService</code></td>
+            <td>مهام مشروع، والتحقق أن المشروع موجود قبل الإنشاء، وحذف فعلي</td>
+            <td><code>Tasks</code> و<code>Projects</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout fact"><strong>من الكود</strong> استعلامات القراءة في الخدمتين تستخدم <code>AsNoTracking</code> ثم <code>Select</code> إلى DTO. التعديل والحذف يحمّلان الكيان ثم يحفظان.</div>
+
+      <h2>DTOs</h2>
+      <p>المسار <code>DTOs/</code>. شكل الطلب والاستجابة. التحقق بـ Data Annotations على الإنشاء والتعديل.</p>
+      <table>
+        <thead><tr><th>الملف</th><th>الحقول التي تهم</th></tr></thead>
+        <tbody>
+          <tr><td><code>Projects/CreateProjectDto.cs</code></td><td><code>Name</code> مطلوب 3–100، <code>Description</code> حتى 500</td></tr>
+          <tr><td><code>Projects/UpdateProjectDto.cs</code></td><td>نفس حقول الإنشاء. لا حالة ولا تواريخ</td></tr>
+          <tr><td><code>Projects/ProjectResponseDto.cs</code></td><td><code>Id</code>، <code>Name</code>، <code>Description</code>، <code>Status</code>، <code>CreatedAt</code></td></tr>
+          <tr><td><code>Tasks/CreateTaskDto.cs</code></td><td><code>Title</code> 3–150، <code>Description</code> حتى 1000، <code>DueDate</code>، <code>ProjectId</code> من 1</td></tr>
+          <tr><td><code>Tasks/UpdateTaskDto.cs</code></td><td>العنوان والوصف والإكمال وتاريخ الاستحقاق. لا <code>ProjectId</code></td></tr>
+          <tr><td><code>Tasks/TaskResponseDto.cs</code></td><td><code>Id</code>، العنوان، الوصف، <code>IsCompleted</code>، <code>DueDate</code>، <code>ProjectId</code></td></tr>
+          <tr><td><code>ProjectQueryDto.cs</code></td><td><code>Search</code>، <code>Status</code>، <code>PageNumber=1</code>، <code>PageSize=10</code>، <code>SortBy=Name</code>، <code>Descending</code></td></tr>
+          <tr><td><code>PagedResultDto.cs</code></td><td><code>Items</code>، <code>TotalCount</code>، <code>PageNumber</code>، <code>PageSize</code>، و<code>TotalPages</code> محسوب</td></tr>
+        </tbody>
+      </table>
+      <div class="callout fact"><strong>من الكود</strong> <code>ProjectQueryDto</code> و<code>PagedResultDto</code> و<code>ProjectStatus</code> و<code>BaseEntity</code> بلا فضاء أسماء. بقية الأنواع تحت <code>ProjectManagementSystem.*</code>.</div>
+
+      <h2>Models</h2>
+      <p>المسار <code>Models/</code>. الكيانات التي يترجمها EF.</p>
+      <ul>
+        <li><code>BaseEntity</code>: <code>Id</code>، <code>CreatedAt</code>، <code>UpdatedAt</code>، <code>IsDeleted</code>، <code>DeletedAt</code>.</li>
+        <li><code>Project</code> يرث <code>BaseEntity</code> ويضيف الاسم والوصف والحالة وتاريخي البداية والاستحقاق ومجموعة المهام.</li>
+        <li><code>ProjectTask</code> لا يرث <code>BaseEntity</code>. مفتاح أجنبي <code>ProjectId</code>.</li>
+        <li><code>ProjectStatus</code>: <code>New=1</code>، <code>InProgress=2</code>، <code>Completed=3</code>، <code>OnHold=4</code>، <code>Cancelled=5</code>.</li>
+      </ul>
+      <div class="callout fact"><strong>من الكود</strong> أعلى <code>Project.cs</code> تعريف قديم معلّق بالكامل. النوع الحي هو <code>public class Project : BaseEntity</code>.</div>
+
+      <h2>Data</h2>
+      <p><code>Data/ApplicationDbContext.cs</code> يعرّف <code>DbSet&lt;Project&gt; Projects</code> و<code>DbSet&lt;ProjectTask&gt; Tasks</code>. يضبط أطوال الحقول، القيمة الافتراضية للحالة، مرشح الاستعلام، وعلاقة الحذف المتتالي. <code>SaveChangesAsync</code> يكتب وقت الإنشاء أو التعديل لكيانات <code>BaseEntity</code> فقط.</p>
+
+      <h2>Middleware و Exceptions</h2>
+      <p><code>ExceptionHandlingMiddleware</code> يغلّف بقية الأنبوب. عند استثناء لم يبدأ الرد بعده يمسح الاستجابة ويرسل <code>{"statusCode":500,"message":"An unexpected error occurred."}</code> ويسجّل الخطأ.</p>
+      <div class="callout gap"><strong>غير مستخدم</strong> <code>Exceptions/NotFoundException.cs</code> فارغ. غياب السجل يُعاد اليوم كـ <code>null</code> أو <code>false</code> من الخدمة، والمتحكم يحوّلها إلى 404.</div>
+
+      <h2>Migrations</h2>
+      <p>مساران مطبَّقان في الكود:</p>
+      <ul>
+        <li><code>20261105153426_InitialCreate</code> ينشئ <code>Projects</code> و<code>Tasks</code> مع <code>FK_Tasks_Projects_ProjectId</code> وحذف متتالٍ.</li>
+        <li><code>20261111111520_AddProjectAuditAndQueryFields</code> يضيف إلى <code>Projects</code>: <code>DeletedAt</code>، <code>DueDate</code>، <code>IsDeleted</code>، <code>StartDate</code>، <code>Status</code>، <code>UpdatedAt</code>.</li>
+      </ul>
+
+      <h2>Properties والإعداد</h2>
+      <p><code>Properties/launchSettings.json</code> يعرّف ملفي تشغيل <code>http</code> و<code>https</code>. الإعداد في <code>appsettings.json</code> و<code>appsettings.Development.json</code>. التفاصيل في صفحة التشغيل.</p>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

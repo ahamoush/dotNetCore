@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>الواجهات البرمجية — Project Management System</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">docs</div>
+        <div>
+          <strong>Project Management</strong>
+          <span>شرح هندسي</span>
+        </div>
+      </div>
+      <nav>
+        <a href="../index.html">البوابة</a>
+        <a href="overview.html">نظرة عامة</a>
+        <a href="architecture.html">العمارة</a>
+        <a href="modules.html">الوحدات</a>
+        <a href="data-model.html">نموذج البيانات</a>
+        <a class="active" href="apis.html">الواجهات البرمجية</a>
+        <a href="flows.html">التدفقات</a>
+        <a href="screens.html">الشاشات</a>
+        <a href="operations.html">التشغيل</a>
+        <a href="glossary.html">المصطلحات</a>
+      </nav>
+    </aside>
+    <main>
+      <header class="page-head">
+        <p class="kicker">Engineering brief</p>
+        <h1>الواجهات البرمجية</h1>
+        <p class="lede">مساران فقط: <code>api/Projects</code> و<code>api/Tasks</code>. لا مصادقة على أي منهما. التحقق من Data Annotations تلقائي لأن المتحكمات موسومة بـ <code>[ApiController]</code>.</p>
+      </header>
+
+      <div class="callout fact"><strong>من الكود</strong> عمود المصادقة في كل الصفوف: لا يوجد. <code>UseAuthorization</code> يعمل بلا مخطط مصادقة وبلا <code>[Authorize]</code>.</div>
+
+      <h2>المشاريع</h2>
+      <p>المصدر <code>Controllers/ProjectsController.cs</code>. التنفيذ <code>Services/ProjectService.cs</code>.</p>
+      <table>
+        <thead>
+          <tr><th>Method</th><th>المسار</th><th>الطلب</th><th>الاستجابة</th><th>المصدر</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>GET</code></td>
+            <td><code>/api/Projects/all</code></td>
+            <td>لا جسم</td>
+            <td>200 وقائمة <code>ProjectResponseDto</code></td>
+            <td><code>GetAll</code></td>
+          </tr>
+          <tr>
+            <td><code>GET</code></td>
+            <td><code>/api/Projects</code></td>
+            <td>استعلام <code>ProjectQueryDto</code></td>
+            <td>200 و<code>PagedResultDto</code>، أو 400 إذا الصفحة أصغر من 1 أو الحجم خارج 1–100</td>
+            <td><code>GetProjects</code></td>
+          </tr>
+          <tr>
+            <td><code>GET</code></td>
+            <td><code>/api/Projects/{id}</code></td>
+            <td><code>id</code> عدد صحيح</td>
+            <td>200 أو 404 <code>{"message":"Project not found."}</code></td>
+            <td><code>GetById</code></td>
+          </tr>
+          <tr>
+            <td><code>POST</code></td>
+            <td><code>/api/Projects</code></td>
+            <td><code>CreateProjectDto</code></td>
+            <td>201 مع جسم <code>ProjectResponseDto</code> ورأس موقع من <code>CreatedAtAction</code></td>
+            <td><code>Create</code></td>
+          </tr>
+          <tr>
+            <td><code>PUT</code></td>
+            <td><code>/api/Projects/{id}</code></td>
+            <td><code>UpdateProjectDto</code></td>
+            <td>204 أو 404</td>
+            <td><code>Update</code></td>
+          </tr>
+          <tr>
+            <td><code>DELETE</code></td>
+            <td><code>/api/Projects/{id}</code></td>
+            <td><code>id</code></td>
+            <td>204 بعد حذف ناعم، أو 404</td>
+            <td><code>Delete</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <p>معاملات الاستعلام في القائمة المرقّمة: <code>search</code>، <code>status</code>، <code>pageNumber</code>، <code>pageSize</code>، <code>sortBy</code> (<code>name</code> الافتراضي، أو <code>createdat</code>، أو <code>duedate</code>)، <code>descending</code>.</p>
+
+      <h2>المهام</h2>
+      <p>المصدر <code>Controllers/TasksController.cs</code>. التنفيذ <code>Services/TaskService.cs</code>.</p>
+      <table>
+        <thead>
+          <tr><th>Method</th><th>المسار</th><th>الطلب</th><th>الاستجابة</th><th>المصدر</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>GET</code></td>
+            <td><code>/api/Tasks</code></td>
+            <td><code>projectId</code> اختياري في الاستعلام</td>
+            <td>200 وقائمة <code>TaskResponseDto</code></td>
+            <td><code>GetAll</code></td>
+          </tr>
+          <tr>
+            <td><code>GET</code></td>
+            <td><code>/api/Tasks/{id}</code></td>
+            <td><code>id</code> عدد صحيح</td>
+            <td>200 أو 404 <code>{"message":"Task not found."}</code></td>
+            <td><code>GetById</code></td>
+          </tr>
+          <tr>
+            <td><code>POST</code></td>
+            <td><code>/api/Tasks</code></td>
+            <td><code>CreateTaskDto</code></td>
+            <td>201، أو 400 <code>{"message":"Project does not exist."}</code> إذا أعادت الخدمة <code>null</code></td>
+            <td><code>Create</code></td>
+          </tr>
+          <tr>
+            <td><code>PUT</code></td>
+            <td><code>/api/Tasks/{id}</code></td>
+            <td><code>UpdateTaskDto</code></td>
+            <td>204 أو 404</td>
+            <td><code>Update</code></td>
+          </tr>
+          <tr>
+            <td><code>DELETE</code></td>
+            <td><code>/api/Tasks/{id}</code></td>
+            <td><code>id</code></td>
+            <td>204 بعد حذف الصف، أو 404</td>
+            <td><code>Delete</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>أخطاء الشكل</h2>
+      <p>حقول <code>[Required]</code> و<code>[StringLength]</code> و<code>[Range]</code> على DTOs الإنشاء والتعديل. عند فشلها يعيد إطار <code>[ApiController]</code> 400 قبل دخول الفعل. لا يوجد <code>FluentValidation</code> ولا فلتر تحقق مكتوب يدوياً سوى فحص الترقيم في <code>GetProjects</code>.</p>
+
+      <h2>خطأ غير متوقع</h2>
+      <p><code>ExceptionHandlingMiddleware</code> يحوّل الاستثناء الذي يصل إليه إلى 500 والجسم <code>statusCode</code> و<code>message</code>. إذا كان الرد قد بدأ يُعاد رمي الاستثناء.</p>
+
+      <div class="callout gap"><strong>غير مؤكد</strong> لا مجموعة Postman ولا عقد OpenAPI مكتوب يدوياً في المستودع. الوثيقة تتولد من Swagger أثناء التشغيل في التطوير.</div>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

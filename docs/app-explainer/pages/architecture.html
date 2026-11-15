@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>العمارة — Project Management System</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">docs</div>
+        <div>
+          <strong>Project Management</strong>
+          <span>شرح هندسي</span>
+        </div>
+      </div>
+      <nav>
+        <a href="../index.html">البوابة</a>
+        <a href="overview.html">نظرة عامة</a>
+        <a class="active" href="architecture.html">العمارة</a>
+        <a href="modules.html">الوحدات</a>
+        <a href="data-model.html">نموذج البيانات</a>
+        <a href="apis.html">الواجهات البرمجية</a>
+        <a href="flows.html">التدفقات</a>
+        <a href="screens.html">الشاشات</a>
+        <a href="operations.html">التشغيل</a>
+        <a href="glossary.html">المصطلحات</a>
+      </nav>
+    </aside>
+    <main>
+      <header class="page-head">
+        <p class="kicker">Engineering brief</p>
+        <h1>العمارة</h1>
+        <p class="lede">مشروع ويب واحد. المتحكم يعتمد الواجهة، والخدمة تعتمد السياق، والسياق يعتمد SQL Server. الاتجاه من الخارج إلى الداخل.</p>
+      </header>
+
+      <h2>الطبقات</h2>
+      <div class="diagram stack">
+        <div class="layer"><b>فاعل خارجي</b> — عميل HTTP. لا مصادقة.</div>
+        <div class="layer"><b>عرض</b> — <code>Controllers</code> + Swagger في التطوير + <code>ExceptionHandlingMiddleware</code></div>
+        <div class="layer"><b>تطبيق</b> — <code>Interfaces</code> ثم <code>Services</code> ثم <code>DTOs</code>. لا طبقة أوامر/استعلامات منفصلة.</div>
+        <div class="layer"><b>نموذج</b> — <code>Models</code> داخل نفس المشروع، وليس مشروعاً مستقلاً</div>
+        <div class="layer"><b>بنية تحتية</b> — <code>Data/ApplicationDbContext.cs</code> و<code>Migrations</code></div>
+        <div class="layer"><b>مخزن</b> — SQL Server. لا طرف ثالث آخر.</div>
+      </div>
+
+      <h2>اتجاه الاعتماد</h2>
+      <div class="diagram flow">
+        <span class="box">Controller</span><span class="arrow">←</span>
+        <span class="box">IProjectService / ITaskService</span><span class="arrow">←</span>
+        <span class="box">ProjectService / TaskService</span><span class="arrow">←</span>
+        <span class="box">ApplicationDbContext</span><span class="arrow">←</span>
+        <span class="box">SQL Server</span>
+      </div>
+      <p class="muted">السهم يتبع اتجاه الاستدعاء: المتحكم يستدعي الواجهة، والتنفيذ المسجَّل في <code>Program.cs</code> هو الخدمة، والخدمة تفتح <code>DbSet</code>.</p>
+
+      <h2>خط أنابيب HTTP</h2>
+      <p>الترتيب في <code>Program.cs</code> بعد <code>Build</code>:</p>
+      <div class="diagram flow">
+        <span class="box">ExceptionHandlingMiddleware</span><span class="arrow">←</span>
+        <span class="box">Swagger إذا Development</span><span class="arrow">←</span>
+        <span class="box">HttpsRedirection</span><span class="arrow">←</span>
+        <span class="box">Authorization</span><span class="arrow">←</span>
+        <span class="box">MapControllers</span>
+      </div>
+
+      <h2>تسجيل الخدمات</h2>
+      <table>
+        <thead>
+          <tr><th>التسجيل</th><th>العمر</th><th>الملف</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>AddControllers</code></td><td>إطار العمل</td><td><code>Program.cs</code></td></tr>
+          <tr><td><code>AddDbContext&lt;ApplicationDbContext&gt;</code> مع <code>UseSqlServer</code></td><td>Scoped</td><td><code>Program.cs</code></td></tr>
+          <tr><td><code>IProjectService</code> → <code>ProjectService</code></td><td><code>AddScoped</code></td><td><code>Program.cs</code></td></tr>
+          <tr><td><code>ITaskService</code> → <code>TaskService</code></td><td><code>AddScoped</code></td><td><code>Program.cs</code></td></tr>
+          <tr><td><code>AddEndpointsApiExplorer</code> و<code>AddSwaggerGen</code></td><td>إطار العمل</td><td><code>Program.cs</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2>مكوّن يتحدث مع من</h2>
+      <table>
+        <thead>
+          <tr><th>المكوّن</th><th>يعيش في</th><th>يتحدث إلى</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>ProjectsController</code></td><td><code>Controllers/ProjectsController.cs</code></td><td><code>IProjectService</code> فقط</td></tr>
+          <tr><td><code>TasksController</code></td><td><code>Controllers/TasksController.cs</code></td><td><code>ITaskService</code> فقط</td></tr>
+          <tr><td><code>ProjectService</code></td><td><code>Services/ProjectService.cs</code></td><td><code>ApplicationDbContext.Projects</code></td></tr>
+          <tr><td><code>TaskService</code></td><td><code>Services/TaskService.cs</code></td><td><code>Tasks</code> و<code>Projects.AnyAsync</code> عند الإنشاء</td></tr>
+          <tr><td><code>ApplicationDbContext</code></td><td><code>Data/ApplicationDbContext.cs</code></td><td>SQL Server، ويضبط <code>CreatedAt</code> / <code>UpdatedAt</code> قبل الحفظ</td></tr>
+          <tr><td><code>ExceptionHandlingMiddleware</code></td><td><code>Middleware/ExceptionHandlingMiddleware.cs</code></td><td><code>ILogger</code> ثم JSON برمز 500</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout fact"><strong>من الكود</strong> المتحكم لا يلمس <code>DbContext</code>. الخدمة لا ترجع كيان <code>Project</code> أو <code>ProjectTask</code>؛ ترجع DTO أو <code>bool</code> أو <code>null</code>.</div>
+      <div class="callout inferred"><strong>استنتاج</strong> هذا ليس Clean Architecture متعدد المشاريع. الطبقات مجلدات داخل مشروع ويب واحد، والنموذج وEF والـ HTTP يُترجمون معاً.</div>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

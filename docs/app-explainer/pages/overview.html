@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>نظرة عامة — Project Management System</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">docs</div>
+        <div>
+          <strong>Project Management</strong>
+          <span>شرح هندسي</span>
+        </div>
+      </div>
+      <nav>
+        <a href="../index.html">البوابة</a>
+        <a class="active" href="overview.html">نظرة عامة</a>
+        <a href="architecture.html">العمارة</a>
+        <a href="modules.html">الوحدات</a>
+        <a href="data-model.html">نموذج البيانات</a>
+        <a href="apis.html">الواجهات البرمجية</a>
+        <a href="flows.html">التدفقات</a>
+        <a href="screens.html">الشاشات</a>
+        <a href="operations.html">التشغيل</a>
+        <a href="glossary.html">المصطلحات</a>
+      </nav>
+    </aside>
+    <main>
+      <header class="page-head">
+        <p class="kicker">Engineering brief</p>
+        <h1>نظرة عامة</h1>
+        <p class="lede">نظام واحد يدير مشاريع ومهامها عبر REST، ويخزنها في SQL Server مع حذف ناعم للمشاريع وحذف فعلي للمهام.</p>
+      </header>
+
+      <h2>المهمة</h2>
+      <p>إنشاء المشاريع وتعديل اسمها ووصفها، والبحث فيها مع تصفية وترقيم، ثم إلحاق مهام بكل مشروع وتعليم المهمة مكتملة أو حذفها.</p>
+
+      <h2>المكدس</h2>
+      <table>
+        <thead>
+          <tr><th>الطبقة</th><th>ما هو موجود في المستودع</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>اللغة والإطار</td><td>C#، ASP.NET Core، <code>net10.0</code> في <code>ProjectManagementSystem.csproj</code></td></tr>
+          <tr><td>واجهة المستخدم</td><td>لا صفحات. Swagger UI في بيئة التطوير فقط</td></tr>
+          <tr><td>البيانات</td><td>Entity Framework Core مع موفر SQL Server</td></tr>
+          <tr><td>المصادقة</td><td>غير مضافة. <code>UseAuthorization</code> موجود في <code>Program.cs</code> بدون <code>AddAuthentication</code></td></tr>
+          <tr><td>الرسائل والطوابير</td><td>لا توجد</td></tr>
+          <tr><td>المهام الخلفية</td><td>لا توجد</td></tr>
+        </tbody>
+      </table>
+
+      <h2>خريطة المستودع</h2>
+      <p>جذر مساحة العمل <code>d:\DotNetBackend</code> يحتوي مشروعاً واحداً: <code>ProjectManagementSystem</code>. لا ملف حل <code>.sln</code> في الجذر.</p>
+      <table>
+        <thead>
+          <tr><th>المسار</th><th>الدور</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>ProjectManagementSystem/</code></td><td>تطبيق الويب الوحيد</td></tr>
+          <tr><td><code>docs/app-explainer/</code></td><td>هذا الشرح، وليس جزءاً من وقت التشغيل</td></tr>
+        </tbody>
+      </table>
+
+      <h2>طوبولوجيا التشغيل</h2>
+      <div class="diagram stack">
+        <div class="layer"><b>عميل HTTP</b> — لا تطبيق واجهة في هذا المستودع</div>
+        <div class="layer"><b>عملية واحدة</b> — <code>dotnet run</code> يستضيف Kestrel</div>
+        <div class="layer"><b>SQL Server</b> — عبر مفتاح <code>ConnectionStrings:DefaultConnection</code></div>
+      </div>
+
+      <h2>من يستخدمه</h2>
+      <div class="callout fact"><strong>من الكود</strong> لا أدوار مستخدمين ولا صلاحيات. أي متصل بالمنفذ يستطيع استدعاء كل المسارات.</div>
+      <div class="callout inferred"><strong>استنتاج</strong> الجمهور المقصود عميل HTTP خارجي (واجهة لاحقة أو Swagger أثناء التطوير)، لأن المتحكمات ترجع DTOs ولا ترجع كيانات EF.</div>
+
+      <h2>حدود النظام</h2>
+      <ul>
+        <li>مشروع واحد يملك مهاماً كثيرة. المهمة لا تنتقل إلى مشروع آخر في <code>UpdateTaskDto</code>.</li>
+        <li>تعديل المشروع يغيّر الاسم والوصف فقط. الحالة وتاريخ البداية وتاريخ الاستحقاق مخزنة ولا تُحدَّث من واجهة التعديل.</li>
+        <li>حذف المشروع يضع <code>IsDeleted</code> و<code>DeletedAt</code>. حذف المهمة يستدعي <code>Remove</code>.</li>
+        <li><code>Exceptions/NotFoundException.cs</code> ملف فارغ ولا يُستدعى من أي ملف آخر.</li>
+      </ul>
+
+      <h2>ما هو خارج النطاق</h2>
+      <p>لا تسجيل دخول، لا مستخدمون، لا مرفقات، لا إشعارات، لا واجهة صفحات، ولا نشر أو Docker في المستودع.</p>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>
