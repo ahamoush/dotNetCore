@@ -5,11 +5,29 @@ using ProjectManagementSystem.Interfaces;
 namespace ProjectManagementSystem.Controllers;
 
 // ApiController: يفعّل ميزات الـ API مثل Validation التلقائي
+// ميزات ApiController :
+// 1. Validation التلقائي مثال: [FromQuery] ProjectQueryDto query   
+// 2. Model Binding التلقائي مثال: [FromBody] CreateProjectDto dto
+// 3. Action Results التلقائي مثال: return Ok(projects);
+// 4. Formatting التلقائي مثال: return Json(projects);
+// 5. CORS التلقائي مثال: return Cors();
+// 6. Security التلقائي مثال: return Authorize();
+// 7. Logging التلقائي مثال: return Log();
+// 8. Error Handling التلقائي مثال: return Error();   
 [ApiController]
 // المسار الأساسي: /api/projects
 [Route("api/[controller]")]
 public class ProjectsController : ControllerBase
 {
+    // ControllerBase يحتوي على ميزات الـ API مثل Validation التلقائي
+    // مثال: return BadRequest(new { message = "Invalid request." });
+    // مثال: return NotFound(new { message = "Resource not found." });
+    // مثال: return Ok(project);
+    // مثال: return NoContent();
+    // مثال: return Conflict(new { message = "Resource already exists." });
+    // مثال: return Unauthorized(new { message = "Unauthorized." });
+    // مثال: return Forbidden(new { message = "Forbidden." });
+    // مثال: return BadRequest(new { message = "Invalid request." });
     private readonly IProjectService _service;
 
     // Dependency Injection: ASP.NET يمرر IProjectService تلقائياً
@@ -65,12 +83,7 @@ public class ProjectsController : ControllerBase
     {
         var project = await _service.CreateAsync(dto);
 
-        // 201 Created + رابط للمورد الجديد في Header اسمه Location
-        return CreatedAtAction(
-            nameof(GetById),
-            new { id = project.Id },
-            project
-        );
+        return Ok(project);
     }
 
     // PUT /api/projects/5

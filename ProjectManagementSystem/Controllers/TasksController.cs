@@ -49,11 +49,7 @@ public class TasksController : ControllerBase
         if (task is null)
             return BadRequest(new { message = "Project does not exist." });
 
-        return CreatedAtAction(
-            nameof(GetById),
-            new { id = task.Id },
-            task
-        );
+        return Ok(task);
     }
 
     // PUT /api/tasks/3

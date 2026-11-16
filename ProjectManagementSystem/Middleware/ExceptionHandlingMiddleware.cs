@@ -1,15 +1,17 @@
-using System.Net;
-using System.Text.Json;
-
 namespace ProjectManagementSystem.Middleware;
 
-// Middleware = كود يشتغل على كل Request قبل/بعد ما يوصل للـ Controller
-// هذا Middleware يمسك أي Exception غير متوقع ويرجع رسالة JSON واضحة
+// Middleware = كود يلف كل طلب قبل ما يوصل للـ Controller وبعده
+// هذا الكلاس يمسك أي Exception غير متوقع ويرجع JSON بحالة 500
 public class ExceptionHandlingMiddleware
 {
+    // _next = باقي خط الطلبات (Controllers وغيرها)
+    // نستدعيه عشان الطلب يكمل، وإذا طلع خطأ نمسكه هنا
     private readonly RequestDelegate _next;
+
+    // _logger = لتسجيل الخطأ في نافذة التشغيل أثناء التطوير
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
+    // ASP.NET يمرر next و logger تلقائياً لما يسجل الميدلوير في Program.cs
     public ExceptionHandlingMiddleware(
         RequestDelegate next,
         ILogger<ExceptionHandlingMiddleware> logger)
@@ -18,36 +20,29 @@ public class ExceptionHandlingMiddleware
         _logger = logger;
     }
 
+    // InvokeAsync = الدالة اللي تنفذ مع كل طلب
+    // HttpContext = الطلب الحالي والرد اللي رح نرجعه
     public async Task InvokeAsync(HttpContext context)
     {
         try
         {
-            // كمل تنفيذ الـ Pipeline (Controllers وغيرها)
+            // كمل تنفيذ الطلب. إذا نجح، هذا الميدلوير ما يغير شيئاً
             await _next(context);
         }
         catch (Exception ex)
         {
-            // نسجل الخطأ في الـ Logs عشان نعرف السبب أثناء التطوير
+            // نسجل تفاصيل الخطأ عندنا، وما نرجعها للعميل
             _logger.LogError(ex, "Unexpected error occurred.");
 
-            // لو الـ Response بدأ يتحكتب خلاص، مش نقدر نعدل عليه بأمان
-            if (context.Response.HasStarted)
-                throw;
+            // 500 = خطأ من السيرفر، مو من بيانات الطلب
+            context.Response.StatusCode = 500;
 
-            context.Response.Clear();
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            // نخبر العميل إن جسم الرد JSON
             context.Response.ContentType = "application/json";
 
-            // رسالة عامة للمستخدم (من غير تفاصيل داخلية حساسة)
-            var response = new
-            {
-                statusCode = 500,
-                message = "An unexpected error occurred."
-            };
-
+            // رسالة عامة ثابتة، من غير سبب الخطأ الداخلي
             await context.Response.WriteAsync(
-                JsonSerializer.Serialize(response)
-            );
+                """{"message":"An unexpected error occurred."}""");
         }
     }
 }

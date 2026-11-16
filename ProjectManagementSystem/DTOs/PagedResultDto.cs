@@ -12,6 +12,6 @@ public class PagedResultDto<T>
     public int PageSize { get; set; }
 
     // يحسب عدد الصفحات تلقائياً
-    public int TotalPages =>
-        (int)Math.Ceiling((double)TotalCount / PageSize);
+    // public int TotalPages =>
+    //     (int)Math.Ceiling((double)TotalCount / PageSize);
 }

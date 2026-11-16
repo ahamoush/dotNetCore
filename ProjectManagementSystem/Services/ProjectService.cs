@@ -76,7 +76,7 @@ public class ProjectService : IProjectService
         _context.Projects.Add(project);
 
         // SaveChangesAsync = تنفيذ INSERT فعلياً في SQL Server
-        // CreatedAt يتم تعبئته تلقائياً داخل ApplicationDbContext.SaveChangesAsync
+        // CreatedAt يتعبأ من القيمة الافتراضية على BaseEntity لحظة new Project
         await _context.SaveChangesAsync();
 
         return ToResponseDto(project);
@@ -93,6 +93,7 @@ public class ProjectService : IProjectService
 
         project.Name = dto.Name;
         project.Description = dto.Description;
+        project.UpdatedAt = DateTime.UtcNow;
 
         // EF Core يتتبع التغييرات ويعمل UPDATE عند SaveChanges
         await _context.SaveChangesAsync();

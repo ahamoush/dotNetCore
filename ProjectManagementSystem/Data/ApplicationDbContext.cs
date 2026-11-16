@@ -19,28 +19,6 @@ public class ApplicationDbContext : DbContext
     // جدول المهام
     public DbSet<ProjectTask> Tasks => Set<ProjectTask>();
 
-    // قبل ما EF يحفظ أي تغيير، نمر هنا لتعبئة تواريخ الإنشاء/التعديل تلقائياً
-    public override Task<int> SaveChangesAsync(
-        CancellationToken cancellationToken = default)
-    {
-        var utcNow = DateTime.UtcNow;
-
-        // ChangeTracker يعرف كل الكيانات اللي اتعملت لها Add أو Update
-        foreach (var entry in ChangeTracker.Entries<BaseEntity>())
-        {
-            if (entry.State == EntityState.Added)
-            {
-                entry.Entity.CreatedAt = utcNow;
-            }
-            else if (entry.State == EntityState.Modified)
-            {
-                entry.Entity.UpdatedAt = utcNow;
-            }
-        }
-
-        return base.SaveChangesAsync(cancellationToken);
-    }
-
     // هنا نضبط قواعد الجداول والعلاقات والفلاتر
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

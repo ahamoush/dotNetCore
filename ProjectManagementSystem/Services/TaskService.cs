@@ -33,6 +33,8 @@ public class TaskService : ITaskService
     // جلب كل المهام، مع إمكانية الفلترة بـ projectId
     public async Task<IEnumerable<TaskResponseDto>> GetAllAsync(int? projectId)
     {
+        // AsNoTracking = لا تتعامل مع الكيانات في الـ Context
+        // لأننا لا نقوم بتعديلها فقط نقرا منها
         var query = _context.Tasks.AsNoTracking();
 
         // لو المستخدم بعت projectId نفلتر المهام الخاصة بالمشروع ده فقط
