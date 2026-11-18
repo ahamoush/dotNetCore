@@ -16,6 +16,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
     }
 
+
     // DbContextOptions :
     // هو الخيارات التي يتم تمريرها إلى السياق لتحديد كيفية التعامل مع قاعدة البيانات.  
     // base(options) :
