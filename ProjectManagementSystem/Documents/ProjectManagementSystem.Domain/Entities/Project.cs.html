@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح ملف Project.cs — كيان المشروع</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح ملف Project.cs خطوة بخطوة</h1>
+<p>دليل للمبتدئ: كيف يُمثَّل المشروع في طبقة Domain؟ وما علاقته بالمهام وحالة <code>ProjectStatus</code>؟</p>
+</div></header>
+<main>
+<section class="card">
+<h2>قبل أن نبدأ: ما وظيفة هذا الملف؟</h2>
+<p>يُعرّف صنف <code>Project</code>: كيان يمثل مشروعاً في نظام إدارة المشاريع. يرث من <code>BaseEntity</code> فيحصل على المعرف والتواريخ والحذف الناعم، ويضيف اسماً ووصفاً وحالةً وتواريخ بدء واستحقاق، ومجموعة مهام مرتبطة.</p>
+<div class="flow"><span>Project</span> ← <span>يرث BaseEntity</span> ← <span>Status من ProjectStatus</span> ← <span>مجموعة Tasks</span></div>
+</section>
+
+<section class="card">
+<h2>1) الاستيراد والإعلان عن الصنف</h2>
+<pre>using ProjectManagementSystem.Domain.Enums;
+
+namespace ProjectManagementSystem.Domain.Entities;
+
+public class Project : BaseEntity
+{</pre>
+<ul>
+<li><code>using ProjectManagementSystem.Domain.Enums</code>: لاستخدام نوع <code>ProjectStatus</code> من ملف التعداد.</li>
+<li><code>public class Project : BaseEntity</code>: صنف عام قابل للإنشاء؛ الوراثة من <code>BaseEntity</code> تضيف الحقول المشتركة تلقائياً.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>2) بيانات المشروع الأساسية</h2>
+<pre>    public string Name { get; set; } = string.Empty;
+
+    public string Description { get; set; } = string.Empty;
+
+    public ProjectStatus Status { get; set; } = ProjectStatus.New;
+
+    public DateTime StartDate { get; set; }
+
+    public DateTime? DueDate { get; set; }</pre>
+<table><tr><th>الخاصية</th><th>النوع / الافتراضي</th><th>المعنى</th></tr>
+<tr><td><code>Name</code></td><td><code>string</code> = <code>string.Empty</code></td><td>اسم المشروع؛ القيمة الابتدائية نص فارغ وليس <code>null</code>.</td></tr>
+<tr><td><code>Description</code></td><td><code>string</code> = <code>string.Empty</code></td><td>وصف المشروع؛ نفس نمط القيمة الافتراضية.</td></tr>
+<tr><td><code>Status</code></td><td><code>ProjectStatus.New</code></td><td>حالة المشروع كتعداد؛ عند إنشاء كائن جديد في الذاكرة تكون الحالة <code>New</code> (القيمة الرقمية 1 في التعداد).</td></tr>
+<tr><td><code>StartDate</code></td><td><code>DateTime</code></td><td>تاريخ البدء؛ لا يوجد في الملف قيمة افتراضية، فيجب تعيينها عند الاستخدام.</td></tr>
+<tr><td><code>DueDate</code></td><td><code>DateTime?</code></td><td>تاريخ الاستحقاق اختياري؛ قد يكون <code>null</code> إذا لم يُحدَّد.</td></tr></table>
+</section>
+
+<section class="card">
+<h2>3) علاقة المهام (مجموعة التنقل)</h2>
+<pre>    public ICollection&lt;ProjectTask&gt; Tasks { get; set; } = new List&lt;ProjectTask&gt;();
+}</pre>
+<ul>
+<li><code>ICollection&lt;ProjectTask&gt;</code>: واجهة تمثل مجموعة مهام تابعة للمشروع.</li>
+<li>التهيئة بـ <code>new List&lt;ProjectTask&gt;()</code> تعني أن الخاصية ليست <code>null</code> عند إنشاء كائن <code>Project</code> جديد؛ يمكن الإضافة للقائمة مباشرة في الذاكرة.</li>
+<li>هذه خاصية تنقل (navigation) نحو كيان <code>ProjectTask</code>؛ التحميل الفعلي من قاعدة البيانات لا يحدث في هذا الملف.</li>
+</ul>
+<div class="warn"><b>تنبيه:</b> إذا طُبِّق الحذف الناعم على <code>Project</code> عبر <code>IsDeleted</code> من <code>BaseEntity</code>، قد تبقى كائنات <code>ProjectTask</code> مرتبطة في الذاكرة أو في التخزين حسب منطق الطبقات الأخرى — هذا الملف لا يحدد سلوك المهام عند حذف المشروع.</div>
+</section>
+
+<section class="card">
+<h2>4) خلاصة تحفظها</h2>
+<ul>
+<li><code>Project</code> يجمع بيانات المشروع ويرث التتبع الزمني والحذف الناعم من <code>BaseEntity</code>.</li>
+<li>الحالة الافتراضية: <code>ProjectStatus.New</code>.</li>
+<li><code>Tasks</code> قائمة مهام مهيأة مسبقاً وغير فارغة من ناحية المرجع.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>ملفات ذات صلة</h2>
+<ul>
+<li><a href="../ProjectManagementSystem.Domain.csproj.html">ProjectManagementSystem.Domain.csproj.html</a></li>
+<li><a href="BaseEntity.cs.html">BaseEntity.cs.html</a></li>
+<li><a href="ProjectTask.cs.html">ProjectTask.cs.html</a></li>
+<li><a href="../Enums/ProjectStatus.cs.html">ProjectStatus.cs.html</a></li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

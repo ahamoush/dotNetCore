@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح RolePermissionMap.cs — ربط الأدوار بالصلاحيات</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح ملف RolePermissionMap.cs خطوة بخطوة</h1>
+<p>قاموس داخلي يربط كل دوراً بمصفوفة صلاحيات، مع دوال استعلام وتحقق</p>
+</div></header>
+<main>
+<section class="card">
+<h2>قبل أن نبدأ: ما وظيفة هذا الملف؟</h2>
+<p>يخزّن خريطة ثابتة من اسم الدور إلى قائمة صلاحيات. الدوال العامة تقرأ الخريطة أو تدمج صلاحيات عدة أدوار، وتتحقق أن كل صلاحية في <code>AppPermissions.All</code> مُسنَدة لدور واحد على الأقل.</p>
+<div class="flow"><span>AppRoles</span> → <span>Map</span> → <span>AppPermissions</span> → <span>سياسات Api</span></div>
+</section>
+
+<section class="card">
+<h2>1) جدول الدور → الصلاحيات (من القاموس الفعلي)</h2>
+<table><tr><th>الدور</th><th>الصلاحيات</th></tr>
+<tr><td><code>Viewer</code></td><td>Permissions.Projects.View، Permissions.Tasks.View</td></tr>
+<tr><td><code>Member</code></td><td>Permissions.Projects.View، Permissions.Tasks.View، Permissions.Tasks.Update</td></tr>
+<tr><td><code>TeamLeader</code></td><td>Permissions.Projects.View، Permissions.Tasks.View، Permissions.Tasks.Create، Permissions.Tasks.Update، Permissions.Tasks.Delete</td></tr>
+<tr><td><code>ProjectManager</code></td><td>Permissions.Projects.View، Permissions.Projects.Create، Permissions.Projects.Update، Permissions.Tasks.View، Permissions.Tasks.Create، Permissions.Tasks.Update، Permissions.Tasks.Delete</td></tr>
+<tr><td><code>Admin</code></td><td>كل عناصر <code>AppPermissions.All</code> (العشرة)</td></tr>
+<tr><td><code>SuperAdmin</code></td><td>كل عناصر <code>AppPermissions.All</code> (العشرة)</td></tr></table>
+<div class="warn"><b>لاحظ:</b> <code>ProjectManager</code> لا يملك <code>Permissions.Projects.Delete</code> في هذا الملف — الحذف مقتصر على من يملك الصلاحية عبر Admin/SuperAdmin فقط في هذه الخريطة.</div>
+</section>
+
+<section class="card">
+<h2>2) EnsureEveryPermissionHasARole</h2>
+<pre>public static void EnsureEveryPermissionHasARole()
+{
+    var missing = new List&lt;string&gt;();
+    foreach (string permission in AppPermissions.All)
+    {
+        if (RolesWith(permission).Length == 0)
+            missing.Add(permission);
+    }
+
+    if (missing.Count &gt; 0)
+    {
+        throw new InvalidOperationException(
+            "Permissions are not assigned to any role: " + string.Join(", ", missing));
+    }
+}</pre>
+<p>يمر على كل صلاحية معرّفة في <code>All</code>. إن لم يجد أي دور يحملها عبر <code>RolesWith</code>، يرمي <code>InvalidOperationException</code> عند التشغيل — حماية من صلاحية «يتيمة» لا يمكن لأحد استخدامها.</p>
+</section>
+
+<section class="card">
+<h2>3) ForRole</h2>
+<pre>public static IReadOnlyList&lt;string&gt; ForRole(string role)
+{
+    if (Map.TryGetValue(role, out string[]? permissions))
+        return permissions;
+
+    return [];
+}</pre>
+<p>دور معروف يُرجع مصفوفته. دور غير موجود في القاموس يُرجع قائمة فارغة (وليس null).</p>
+</section>
+
+<section class="card">
+<h2>4) ForRoles — دمج بدون تكرار</h2>
+<pre>public static IReadOnlyList&lt;string&gt; ForRoles(IEnumerable&lt;string&gt; roles)
+{
+    var permissions = new List&lt;string&gt;();
+    foreach (string role in roles)
+    {
+        foreach (string permission in ForRole(role))
+        {
+            if (!permissions.Contains(permission))
+                permissions.Add(permission);
+        }
+    }
+
+    return permissions;
+}</pre>
+<p>مستخدم له أكثر من دور يحصل على اتحاد الصلاحيات دون تكرار نفس النص.</p>
+</section>
+
+<section class="card">
+<h2>5) RolesWith — عكس الخريطة</h2>
+<pre>public static string[] RolesWith(string permission)
+{
+    var roles = new List&lt;string&gt;();
+    foreach (KeyValuePair&lt;string, string[]&gt; pair in Map)
+    {
+        foreach (string allowed in pair.Value)
+        {
+            if (allowed == permission)
+            {
+                roles.Add(pair.Key);
+                break;
+            }
+        }
+    }
+
+    return roles.ToArray();
+}</pre>
+<p>يعيد أسماء الأدوار التي تتضمن صلاحية معينة — يُستخدم داخل <code>EnsureEveryPermissionHasARole</code>.</p>
+</section>
+
+<section class="card">
+<h2>خلاصة تحفظها</h2>
+<ul>
+<li>مصدر الحقيقة لربط الأدوار بالصلاحيات في طبقة Application.</li>
+<li><code>ForRoles</code> للمستخدم متعدد الأدوار؛ <code>ForRole</code> لدور واحد.</li>
+<li><code>EnsureEveryPermissionHasARole</code> يضمن تغطية كاملة لـ <code>AppPermissions.All</code>.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>ملفات مرتبطة</h2>
+<ul>
+<li><a href="AppRoles.cs.html">AppRoles.cs</a></li>
+<li><a href="AppPermissions.cs.html">AppPermissions.cs</a></li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

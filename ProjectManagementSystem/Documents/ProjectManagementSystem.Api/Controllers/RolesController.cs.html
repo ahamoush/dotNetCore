@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح RolesController</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح RolesController</h1>
+<p>قراءة قائمة الأدوار للواجهات الإدارية</p>
+</div></header>
+<main>
+<section class="card">
+<h2>الغرض</h2>
+<p>نقطة نهاية واحدة؛ لا يوجد FluentValidation لأنه GET فقط.</p>
+</section>
+<section class="card">
+<h2>نقاط النهاية</h2>
+<table>
+<tr><th>الطريقة</th><th>المسار</th><th>السياسة</th><th>الاستجابة</th></tr>
+<tr><td>GET</td><td><code>api/Roles</code></td><td>Permissions.Users.View</td><td>200 <code>RoleResponseDto</code> من <code>GetRoles()</code></td></tr>
+</table>
+</section>
+<section class="card">
+<h2>الكود</h2>
+<pre>[HttpGet]
+[Authorize(Policy = AppPermissions.Users.View)]
+public ActionResult&lt;IReadOnlyList&lt;RoleResponseDto&gt;&gt; GetAll()
+{
+    return Ok(_users.GetRoles());
+}</pre>
+</section>
+<section class="card">
+<h2>ملفات مرتبطة</h2>
+<ul>
+<li><a href="UsersController.cs.html">UsersController.cs.html</a></li>
+<li><a href="../Program.cs.html">Program.cs.html</a> — IdentitySeeder يزرع <code>AppRoles.All</code></li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

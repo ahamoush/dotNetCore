@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح ملف ProjectStatus.cs — حالة المشروع</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح ملف ProjectStatus.cs خطوة بخطوة</h1>
+<p>دليل للمبتدئ: ما هو التعداد <code>enum</code>؟ وما معنى القيم الرقمية لحالات المشروع؟</p>
+</div></header>
+<main>
+<section class="card">
+<h2>قبل أن نبدأ: ما وظيفة هذا الملف؟</h2>
+<p>يُعرّف نوعاً مسمّى <code>ProjectStatus</code> كتعداد (<code>enum</code>) يحدد الحالات الممكنة لمشروع في النموذج. يُستخدم في خاصية <code>Status</code> داخل <code>Project</code>. القيم مُعرَّفة بأرقام صريحة من 1 إلى 5.</p>
+<div class="flow"><span>New</span> ← <span>InProgress</span> ← <span>Completed</span> ← <span>OnHold</span> ← <span>Cancelled</span></div>
+<p class="muted">السهم أعلاه ترتيب عرض للأسماء في الملف فقط؛ الكود لا يفرض انتقالات بين الحالات.</p>
+</section>
+
+<section class="card">
+<h2>1) مساحة الأسماء والتعداد كاملاً</h2>
+<pre>namespace ProjectManagementSystem.Domain.Enums;
+
+public enum ProjectStatus
+{
+    New = 1,
+    InProgress = 2,
+    Completed = 3,
+    OnHold = 4,
+    Cancelled = 5
+}</pre>
+<ul>
+<li><code>namespace ProjectManagementSystem.Domain.Enums</code>: تجمع أنواع التعداد في مجلد Enums منطقياً.</li>
+<li><code>public enum</code>: نوع قيمه أسماء ثابتة؛ في C# يُخزَّن غالباً كعدد صحيح أساسه النوع الافتراضي للتعداد (<code>int</code>).</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>2) جدول القيم كما في المصدر</h2>
+<table><tr><th>الاسم</th><th>القيمة الرقمية</th><th>المعنى الوصفي (من الاسم)</th></tr>
+<tr><td><code>New</code></td><td>1</td><td>مشروع جديد — وهي القيمة الافتراضية في <code>Project.Status</code>.</td></tr>
+<tr><td><code>InProgress</code></td><td>2</td><td>قيد التنفيذ.</td></tr>
+<tr><td><code>Completed</code></td><td>3</td><td>مكتمل.</td></tr>
+<tr><td><code>OnHold</code></td><td>4</td><td>معلّق.</td></tr>
+<tr><td><code>Cancelled</code></td><td>5</td><td>ملغى.</td></tr></table>
+<div class="explain">تعيين أرقام صريحة (1، 2، 3…) يجعل القيمة المخزنة في قاعدة بيانات مستقرة إذا بقيت الأسماء كما هي، حتى لو أُعيد ترتيب أسماء الأعضاء في الملف.</div>
+<div class="warn"><b>تنبيه:</b> تغيير الرقم المرتبط باسم موجود (مثلاً جعل <code>Completed = 4</code>) قد يفسد قراءة البيانات القديمة المخزنة كأعداد. إضافة عضو جديد في الوسط دون أرقام صريحة قد يغيّر ترقيماً تلقائياً — هنا كل الأعضاء مُرقَّمون صراحة.</div>
+</section>
+
+<section class="card">
+<h2>3) خلاصة تحفظها</h2>
+<ul>
+<li>خمس حالات فقط؛ لا يوجد في الملف منطق للتحقق من انتقال من حالة إلى أخرى.</li>
+<li><code>Project</code> يستورد هذا النوع ويجعل الافتراضي <code>ProjectStatus.New</code>.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>ملفات ذات صلة</h2>
+<ul>
+<li><a href="../ProjectManagementSystem.Domain.csproj.html">ProjectManagementSystem.Domain.csproj.html</a></li>
+<li><a href="../Entities/BaseEntity.cs.html">BaseEntity.cs.html</a></li>
+<li><a href="../Entities/Project.cs.html">Project.cs.html</a></li>
+<li><a href="../Entities/ProjectTask.cs.html">ProjectTask.cs.html</a></li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

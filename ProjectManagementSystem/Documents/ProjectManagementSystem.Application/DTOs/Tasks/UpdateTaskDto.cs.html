@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح UpdateTaskDto</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح الملف خطوة بخطوة</h1>
+<p>طلب تحديث مهمة.</p>
+</div></header>
+<main>
+<section class="card">
+<h2>ما هو هذا النوع؟</h2>
+<p><span class="tag">Request Body</span> لتحديث مهمة موجودة (عنوان، وصف، اكتمال، تاريخ).</p>
+</section>
+<section class="card">
+<h2>الكود في المشروع</h2>
+<pre>namespace ProjectManagementSystem.Application.DTOs.Tasks;
+
+public class UpdateTaskDto
+{
+    public string Title { get; set; } = string.Empty;
+
+    public string Description { get; set; } = string.Empty;
+
+    public bool IsCompleted { get; set; }
+
+    public DateTime? DueDate { get; set; }
+}</pre>
+<p class="muted">المسار: <code>DTOs/Tasks/UpdateTaskDto.cs</code></p>
+</section>
+<section class="card">
+<table>
+<tr><th>الخاصية</th><th>النوع</th><th>المعنى</th></tr>
+<tr><td><code>Title</code></td><td><code>string</code></td><td>العنوان المحدّث.</td></tr>
+<tr><td><code>Description</code></td><td><code>string</code></td><td>الوصف.</td></tr>
+<tr><td><code>IsCompleted</code></td><td><code>bool</code></td><td>هل المهمة مكتملة.</td></tr>
+<tr><td><code>DueDate</code></td><td><code>DateTime?</code></td><td>تاريخ الاستحقاق.</td></tr>
+</table>
+</section>
+<section class="card"><h2>ملخص</h2><p>لا يحتوي <code>ProjectId</code>؛ نقل المهمة بين المشاريع غير مغطى بهذا النموذج.</p></section>
+<section class="card">
+<h2>ملفات ذات صلة</h2>
+<ul><li><a href="../../Validators/Tasks/UpdateTaskDtoValidator.cs.html">المدقق (Validator): UpdateTaskDtoValidator.cs</a></li></ul>
+</section>
+</main>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</body>
+</html>

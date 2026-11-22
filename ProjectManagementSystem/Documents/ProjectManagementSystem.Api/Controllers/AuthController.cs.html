@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح AuthController</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح AuthController</h1>
+<p>مسارات المصادقة: تسجيل، دخول، وقراءة المستخدم من JWT</p>
+</div></header>
+<main>
+<section class="card">
+<h2>الغرض</h2>
+<p><span class="tag">AuthController</span> يعرّض عمليات الهوية للعميل. المسار: <code>[Route("api/[controller]")]</code> أي <code>api/Auth</code>.</p>
+<div class="flow"><span>InputValidation</span> ← <span>IAuthService</span> ← <span>JSON</span></div>
+</section>
+<section class="card">
+<h2>1) البنية والحقن</h2>
+<pre>[ApiController]
+[Route("api/[controller]")]
+public class AuthController : ControllerBase
+{
+    private readonly IAuthService _auth;
+    private readonly IValidator&lt;RegisterDto&gt; _registerValidator;
+    private readonly IValidator&lt;LoginDto&gt; _loginValidator;
+}</pre>
+<p>التحقق من المدخلات عبر FluentValidation قبل استدعاء <code>IAuthService</code> في Infrastructure.</p>
+</section>
+<section class="card">
+<h2>2) نقاط النهاية</h2>
+<table>
+<tr><th>الطريقة</th><th>المسار</th><th>الوصول</th><th>ما يُرجع</th></tr>
+<tr><td>POST</td><td><code>api/Auth/register</code></td><td><code>[AllowAnonymous]</code></td><td>200 بيانات التسجيل؛ 400 <code>errors</code> من Identity؛ 400 ValidationProblemDetails</td></tr>
+<tr><td>POST</td><td><code>api/Auth/login</code></td><td><code>[AllowAnonymous]</code></td><td>200 توكن وبيانات؛ 401 رسالة ثابتة؛ 400 تحقق</td></tr>
+<tr><td>GET</td><td><code>api/Auth/me</code></td><td><code>[Authorize]</code></td><td>200 <code>CurrentUserDto</code> مع أدوار وصلاحيات من <code>RolePermissionMap.ForRoles</code></td></tr>
+</table>
+</section>
+<section class="card">
+<h2>3) Register و Login</h2>
+<pre>IActionResult? invalid = await InputValidation.CheckAsync(_registerValidator, dto, ...);
+if (invalid is not null) return invalid;
+AuthResult result = await _auth.RegisterAsync(dto);</pre>
+<div class="explain"><code>AllowAnonymous</code> يتجاوز <code>FallbackPolicy</code> في <code>Program.cs</code>؛ باقي الـ API يتطلب JWT افتراضياً.</div>
+</section>
+<section class="card">
+<h2>4) Me — قراءة Claims</h2>
+<pre>Id = User.FindFirst("sub")?.Value ?? string.Empty;
+Email = User.FindFirst("email")?.Value ?? string.Empty;
+FullName = User.FindFirst(AppClaimTypes.Name)?.Value ?? string.Empty;</pre>
+<p>الأدوار من <code>AppClaimTypes.Role</code>؛ الصلاحيات المحسوبة وليست claims مباشرة في التوكن.</p>
+</section>
+<section class="card">
+<h2>ملخص وملفات مرتبطة</h2>
+<ul>
+<li><a href="../Program.cs.html">Program.cs.html</a> — JWT</li>
+<li><a href="../Validation/InputValidation.cs.html">InputValidation.cs.html</a></li>
+<li><a href="../appsettings.Development.json.html">appsettings.Development.json.html</a> — Jwt و Seed</li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح DependencyInjection.cs — تسجيل خدمات Application</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح ملف DependencyInjection.cs خطوة بخطوة</h1>
+<p>كيف تُسجَّل مُحققون وAutoMapper وخدمات المشاريع والمهام في حاوية DI</p>
+</div></header>
+<main>
+<section class="card">
+<h2>قبل أن نبدأ: ما وظيفة هذا الملف؟</h2>
+<p>كلاس ثابت <code>DependencyInjection</code> يوفّر امتدادين لـ ASP.NET Core: <code>AddApplication</code> لتسجيل كل ما تحتاجه طبقة Application عند تشغيل الـ API، و<code>AssertMappingsAreValid</code> للتحقق من صحة تعيينات AutoMapper بعد بناء التطبيق.</p>
+<div class="flow"><span>Program.cs يستدعي AddApplication</span> ← <span>Validators + AutoMapper</span> ← <span>ProjectService / TaskService</span></div>
+</section>
+
+<section class="card">
+<h2>1) الاستيرادات</h2>
+<pre>using AutoMapper;
+using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
+using ProjectManagementSystem.Application.Interfaces;
+using ProjectManagementSystem.Application.Services;</pre>
+<p>AutoMapper وFluentValidation للتسجيل التلقائي، و<code>IServiceCollection</code> من حزمة Abstractions، والواجهات مع تنفيذات الخدمات.</p>
+</section>
+
+<section class="card">
+<h2>2) الدالة AddApplication</h2>
+<pre>public static IServiceCollection AddApplication(this IServiceCollection services)
+{
+    services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+    services.AddAutoMapper(_ =&gt; { }, typeof(DependencyInjection));
+
+    services.AddScoped&lt;IProjectService, ProjectService&gt;();
+    services.AddScoped&lt;ITaskService, TaskService&gt;();
+    return services;
+}</pre>
+<table><tr><th>السطر</th><th>ماذا يفعل؟</th></tr>
+<tr><td><code>AddValidatorsFromAssembly(...)</code></td><td>يفحص مجمّع هذا المشروع ويسجّل كل كلاس يطبّق <code>IValidator&lt;T&gt;</code> (مجلد Validators).</td></tr>
+<tr><td><code>AddAutoMapper(..., typeof(DependencyInjection))</code></td><td>يسجّل AutoMapper ويجد ملفات <code>Profile</code> مثل <code>MappingProfile</code> في نفس المجمّع.</td></tr>
+<tr><td><code>AddScoped&lt;IProjectService, ProjectService&gt;</code></td><td>عند كل طلب HTTP يُنشأ <code>ProjectService</code> واحد ويُحقَن في الـ Controller.</td></tr>
+<tr><td><code>AddScoped&lt;ITaskService, TaskService&gt;</code></td><td>نفس نمط العمر <code>Scoped</code> لخدمة المهام.</td></tr></table>
+<div class="explain"><b>ملاحظة:</b> هذا الملف لا يسجّل <code>IAuthService</code> أو <code>IUserAdminService</code> — تسجيلهما إن وُجد يكون في طبقة أخرى (مثل Infrastructure أو Api).</div>
+</section>
+
+<section class="card">
+<h2>3) الدالة AssertMappingsAreValid</h2>
+<pre>public static void AssertMappingsAreValid(this IServiceProvider services)
+{
+    services.GetRequiredService&lt;IConfigurationProvider&gt;().AssertConfigurationIsValid();
+}</pre>
+<p>يُستدعى بعد بناء التطبيق (غالباً من <code>Program.cs</code>). إذا كان أي <code>CreateMap</code> ناقصاً أو غير متسق، يرمي استثناءً عند التشغيل بدل خطأ غامض أثناء الطلب.</p>
+</section>
+
+<section class="card">
+<h2>خلاصة تحفظها</h2>
+<ul>
+<li><code>AddApplication</code> = Validators + AutoMapper + ProjectService + TaskService.</li>
+<li>الخدمات <code>Scoped</code> — مناسبة لطلب ويب واحد.</li>
+<li><code>AssertMappingsAreValid</code> يفحص تعيينات AutoMapper مبكراً.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>ملفات مرتبطة</h2>
+<ul>
+<li><a href="ProjectManagementSystem.Application.csproj.html">ProjectManagementSystem.Application.csproj</a></li>
+<li><a href="Mapping/MappingProfile.cs.html">Mapping/MappingProfile.cs</a></li>
+<li><a href="Services/ProjectService.cs.html">Services/ProjectService.cs</a></li>
+<li><a href="Services/TaskService.cs.html">Services/TaskService.cs</a></li>
+<li><a href="Interfaces/IProjectService.cs.html">Interfaces/IProjectService.cs</a></li>
+<li><a href="Interfaces/ITaskService.cs.html">Interfaces/ITaskService.cs</a></li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

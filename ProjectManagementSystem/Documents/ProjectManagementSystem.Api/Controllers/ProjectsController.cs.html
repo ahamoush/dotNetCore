@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح ProjectsController</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح ProjectsController</h1>
+<p>CRUD للمشاريع مع سياسة صلاحية لكل عملية</p>
+</div></header>
+<main>
+<section class="card">
+<h2>الغرض</h2>
+<p>الكلاس محمي بـ <code>[Authorize]</code> على مستوى الـ Controller؛ كل Action يضيف <code>[Authorize(Policy = AppPermissions.Projects.*)]</code>.</p>
+<div class="flow"><span>JWT</span> ← <span>Policy</span> ← <span>IProjectService</span> ← <span>استجابة</span></div>
+</section>
+<section class="card">
+<h2>نقاط النهاية</h2>
+<table>
+<tr><th>الطريقة</th><th>المسار</th><th>السياسة</th><th>الاستجابة</th></tr>
+<tr><td>GET</td><td><code>api/Projects/all</code></td><td>Permissions.Projects.View</td><td>200 قائمة كاملة</td></tr>
+<tr><td>GET</td><td><code>api/Projects</code></td><td>Permissions.Projects.View</td><td>200 <code>PagedResultDto</code> بعد <code>ProjectQueryDto</code></td></tr>
+<tr><td>GET</td><td><code>api/Projects/{id}</code></td><td>Permissions.Projects.View</td><td>200 أو 404</td></tr>
+<tr><td>POST</td><td><code>api/Projects</code></td><td>Permissions.Projects.Create</td><td>200 المشروع</td></tr>
+<tr><td>PUT</td><td><code>api/Projects/{id}</code></td><td>Permissions.Projects.Update</td><td>204 NoContent أو 404</td></tr>
+<tr><td>DELETE</td><td><code>api/Projects/{id}</code></td><td>Permissions.Projects.Delete</td><td>204 أو 404</td></tr>
+</table>
+</section>
+<section class="card">
+<h2>تحقق الإنشاء والتحديث</h2>
+<pre>[Authorize(Policy = AppPermissions.Projects.Create)]
+[HttpPost]
+public async Task&lt;IActionResult&gt; Create(CreateProjectDto dto)
+{
+    IActionResult? invalid = await InputValidation.CheckAsync(_createValidator, dto, ...);
+    if (invalid is not null) return invalid;
+    ProjectResponseDto project = await _service.CreateAsync(dto);
+    return Ok(project);
+}</pre>
+<div class="warn">بدون دور يملك السياسة، <code>UseAuthorization</code> يرجع 403 قبل الوصول للخدمة.</div>
+</section>
+<section class="card">
+<h2>ملفات مرتبطة</h2>
+<ul>
+<li><a href="../Authorization/AuthorizationExtensions.cs.html">AuthorizationExtensions.cs.html</a></li>
+<li><a href="TasksController.cs.html">TasksController.cs.html</a></li>
+<li><a href="../Program.cs.html">Program.cs.html</a></li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

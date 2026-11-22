@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح ProjectManagementSystem.Application.csproj — طبقة التطبيق</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح ملف المشروع خطوة بخطوة</h1>
+<p>بطاقة مشروع <span class="tag">Class Library</span> لطبقة Application — خدمات، DTOs، مُحققون، ولا DbContext هنا</p>
+</div></header>
+<main>
+<section class="card">
+<h2>قبل أن نبدأ: ما وظيفة هذا الملف؟</h2>
+<p>ملف <code>csproj</code> يعرّف مشروع مكتبة صنفية (<b>Class Library</b>) اسمها <code>ProjectManagementSystem.Application</code>. هذه الطبقة تحتوي منطق التطبيق: خدمات المشاريع والمهام، كائنات نقل البيانات (DTOs)، قواعد FluentValidation، تعيينات AutoMapper، وتعريفات الأدوار والصلاحيات. لا تحتوي على <code>DbContext</code> ولا على Controllers — ذلك في طبقات أخرى.</p>
+<div class="flow"><span>Domain (كيانات)</span> ← <span>Application (هذا المشروع)</span> ← <span>Infrastructure / Api</span></div>
+</section>
+
+<section class="card">
+<h2>1) محتوى الملف كما في المستودع</h2>
+<pre>&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+
+  &lt;ItemGroup&gt;
+    &lt;ProjectReference Include="..\ProjectManagementSystem.Domain\ProjectManagementSystem.Domain.csproj" /&gt;
+  &lt;/ItemGroup&gt;
+
+  &lt;ItemGroup&gt;
+    &lt;PackageReference Include="AutoMapper" Version="17.0.0" /&gt;
+    &lt;PackageReference Include="FluentValidation" Version="12.2.0" /&gt;
+    &lt;PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.2.0" /&gt;
+    &lt;PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" /&gt;
+  &lt;/ItemGroup&gt;
+
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+  &lt;/PropertyGroup&gt;
+
+&lt;/Project&gt;</pre>
+</section>
+
+<section class="card">
+<h2>2) مرجع المشروع (ProjectReference)</h2>
+<table><tr><th>العنصر</th><th>المعنى</th></tr>
+<tr><td><code>ProjectManagementSystem.Domain</code></td><td>المرجع الوحيد بين المشاريع. طبقة Application تعتمد على كيانات Domain مثل <code>Project</code> و<code>ProjectTask</code>، ولا تشير إلى Infrastructure أو Api.</td></tr></table>
+<div class="explain"><b>Clean Architecture:</b> الاعتماد يتجه نحو الداخل (Domain). تطبيق الويب يستهلك Application، وليس العكس.</div>
+</section>
+
+<section class="card">
+<h2>3) الحزم (PackageReference)</h2>
+<table><tr><th>الحزمة</th><th>الدور في هذا المشروع</th></tr>
+<tr><td><code>AutoMapper</code> 17.0.0</td><td>تحويل بين كيانات Domain و DTOs عبر <code>MappingProfile</code>.</td></tr>
+<tr><td><code>FluentValidation</code> 12.2.0</td><td>كتابة مُحققين لـ DTOs في مجلد <code>Validators</code>.</td></tr>
+<tr><td><code>FluentValidation.DependencyInjectionExtensions</code></td><td>توفّر <code>AddValidatorsFromAssembly</code> المستخدمة في <code>DependencyInjection.cs</code>.</td></tr>
+<tr><td><code>Microsoft.Extensions.DependencyInjection.Abstractions</code></td><td>يسمح بتعريف امتداد <code>AddApplication</code> على <code>IServiceCollection</code> دون الاعتماد على مشروع ويب كامل.</td></tr></table>
+</section>
+
+<section class="card">
+<h2>4) إعدادات البناء</h2>
+<table><tr><th>الخاصية</th><th>القيمة</th><th>التأثير</th></tr>
+<tr><td><code>TargetFramework</code></td><td><code>net10.0</code></td><td>المشروع يستهدف .NET 10.</td></tr>
+<tr><td><code>ImplicitUsings</code></td><td>enable</td><td>استيرادات شائعة تُضاف تلقائياً (مثل <code>System</code>).</td></tr>
+<tr><td><code>Nullable</code></td><td>enable</td><td>تحذيرات للمراجع التي قد تكون <code>null</code> — مهم في واجهات مثل <code>GetByIdAsync</code> التي ترجع <code>?</code>.</td></tr></table>
+</section>
+
+<section class="card">
+<h2>5) ماذا يوجد داخل المشروع (من هيكل المجلدات)؟</h2>
+<ul>
+<li><b>Services</b> — تنفيذ <code>ProjectService</code> و<code>TaskService</code>.</li>
+<li><b>Interfaces</b> — عقود الخدمات والمستودعات.</li>
+<li><b>DTOs</b> — نماذج الإدخال والإخراج للـ API.</li>
+<li><b>Validators</b> — قواعد التحقق قبل تنفيذ المنطق.</li>
+<li><b>Mapping</b> — <code>MappingProfile</code> لـ AutoMapper.</li>
+<li><b>Authorization</b> — أدوار، صلاحيات، Claims، وخريطة الربط.</li>
+<li><b>DependencyInjection.cs</b> — تسجيل الخدمات في الحاوية.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>خلاصة تحفظها</h2>
+<ul>
+<li>مكتبة وليست تطبيق ويب — لا <code>DbContext</code> ولا Controllers هنا.</li>
+<li>مرجع واحد: <code>Domain</code> فقط.</li>
+<li>AutoMapper + FluentValidation + DI Abstractions هي الاعتمادات الخارجية الرئيسية.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>ملفات مرتبطة في هذا الدليل</h2>
+<ul>
+<li><a href="DependencyInjection.cs.html">DependencyInjection.cs</a></li>
+<li><a href="Mapping/MappingProfile.cs.html">Mapping/MappingProfile.cs</a></li>
+<li><a href="Services/ProjectService.cs.html">Services/ProjectService.cs</a></li>
+<li><a href="Services/TaskService.cs.html">Services/TaskService.cs</a></li>
+<li><a href="Authorization/RolePermissionMap.cs.html">Authorization/RolePermissionMap.cs</a></li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

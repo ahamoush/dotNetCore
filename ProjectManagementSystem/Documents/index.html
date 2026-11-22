@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>فهرس الشروح — Project Management System</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>فهرس شروح المشروع</h1>
+<p>كل ملف كود له صفحة HTML تُفتح وحدها: كود حقيقي، ثم معنى كل جزء.</p>
+</div></header>
+<main>
+<section class="card">
+<h2>قبل أن نبدأ</h2>
+<p>هذه الصفحات شرح تعليمي بنفس شكل دليل <code>Program.cs</code>. ابدأ من Domain ثم Application ثم Infrastructure ثم Api.</p>
+<div class="flow"><span>Domain</span> ← <span>Application</span> ← <span>Infrastructure</span> ← <span>Api</span></div>
+</section>
+<section class="card">
+<h2>ترتيب القراءة لمبتدئ</h2>
+<ol>
+<li><a href="ProjectManagementSystem.Domain/Entities/BaseEntity.cs.html">BaseEntity</a></li>
+<li><a href="ProjectManagementSystem.Domain/Entities/Project.cs.html">Project</a></li>
+<li><a href="ProjectManagementSystem.Domain/Entities/ProjectTask.cs.html">ProjectTask</a></li>
+<li><a href="ProjectManagementSystem.Domain/Enums/ProjectStatus.cs.html">ProjectStatus</a></li>
+<li><a href="ProjectManagementSystem.Application/DTOs/Projects/CreateProjectDto.cs.html">DTOs</a> — البيانات التي تدخل وتخرج</li>
+<li><a href="ProjectManagementSystem.Application/Validators/Projects/CreateProjectDtoValidator.cs.html">Validators</a> — قواعد الرفض</li>
+<li><a href="ProjectManagementSystem.Application/Mapping/MappingProfile.cs.html">MappingProfile</a></li>
+<li><a href="ProjectManagementSystem.Application/Services/ProjectService.cs.html">ProjectService</a> ثم <a href="ProjectManagementSystem.Application/Services/TaskService.cs.html">TaskService</a></li>
+<li><a href="ProjectManagementSystem.Infrastructure/Persistence/ApplicationDbContext.html">ApplicationDbContext</a></li>
+<li><a href="ProjectManagementSystem.Infrastructure/Repositories/ProjectRepository.html">المستودعات</a></li>
+<li><a href="ProjectManagementSystem.Api/Program.cs.html">Program.cs</a></li>
+<li><a href="ProjectManagementSystem.Api/Controllers/ProjectsController.cs.html">Controllers</a></li>
+<li><a href="ProjectManagementSystem.Application/Authorization/RolePermissionMap.cs.html">الصلاحيات</a> ثم <a href="ProjectManagementSystem.Infrastructure/Services/AuthService.html">AuthService</a></li>
+</ol>
+<div class="explain">ملفات Migrations يولّدها Entity Framework. اقرأ شرحها لتعرف الجداول، ولا تعدّل الكود بيدك.</div>
+</section>
+<section class="card">
+  <h2>Domain</h2>
+  <ul>
+    <li><a href="ProjectManagementSystem.Domain/Entities/BaseEntity.cs.html"><code>BaseEntity.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Domain/Entities/Project.cs.html"><code>Project.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Domain/Entities/ProjectTask.cs.html"><code>ProjectTask.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Domain/Enums/ProjectStatus.cs.html"><code>ProjectStatus.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Domain/ProjectManagementSystem.Domain.csproj.html"><code>ProjectManagementSystem.Domain.csproj.html</code></a></li>
+  </ul>
+</section>
+<section class="card">
+  <h2>Application</h2>
+  <ul>
+    <li><a href="ProjectManagementSystem.Application/Authorization/AppClaimTypes.cs.html"><code>AppClaimTypes.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Authorization/AppPermissions.cs.html"><code>AppPermissions.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Authorization/AppRoles.cs.html"><code>AppRoles.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Authorization/RolePermissionMap.cs.html"><code>RolePermissionMap.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DependencyInjection.cs.html"><code>DependencyInjection.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Auth/AuthResponseDto.cs.html"><code>AuthResponseDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Auth/AuthResult.cs.html"><code>AuthResult.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Auth/CurrentUserDto.cs.html"><code>CurrentUserDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Auth/LoginDto.cs.html"><code>LoginDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Auth/RegisterDto.cs.html"><code>RegisterDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/PagedResultDto.cs.html"><code>PagedResultDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/ProjectQueryDto.cs.html"><code>ProjectQueryDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Projects/CreateProjectDto.cs.html"><code>CreateProjectDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Projects/ProjectResponseDto.cs.html"><code>ProjectResponseDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Projects/UpdateProjectDto.cs.html"><code>UpdateProjectDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Tasks/CreateTaskDto.cs.html"><code>CreateTaskDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Tasks/TaskResponseDto.cs.html"><code>TaskResponseDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Tasks/UpdateTaskDto.cs.html"><code>UpdateTaskDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Users/RoleResponseDto.cs.html"><code>RoleResponseDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Users/SetUserRolesDto.cs.html"><code>SetUserRolesDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Users/UserAdminResult.cs.html"><code>UserAdminResult.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/DTOs/Users/UserResponseDto.cs.html"><code>UserResponseDto.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Interfaces/IAuthService.cs.html"><code>IAuthService.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Interfaces/IProjectRepository.cs.html"><code>IProjectRepository.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Interfaces/IProjectService.cs.html"><code>IProjectService.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Interfaces/ITaskRepository.cs.html"><code>ITaskRepository.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Interfaces/ITaskService.cs.html"><code>ITaskService.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Interfaces/IUserAdminService.cs.html"><code>IUserAdminService.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Mapping/MappingProfile.cs.html"><code>MappingProfile.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/ProjectManagementSystem.Application.csproj.html"><code>ProjectManagementSystem.Application.csproj.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Services/ProjectService.cs.html"><code>ProjectService.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Services/TaskService.cs.html"><code>TaskService.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Validators/Auth/LoginDtoValidator.cs.html"><code>LoginDtoValidator.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Validators/Auth/RegisterDtoValidator.cs.html"><code>RegisterDtoValidator.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Validators/ProjectQueryDtoValidator.cs.html"><code>ProjectQueryDtoValidator.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Validators/Projects/CreateProjectDtoValidator.cs.html"><code>CreateProjectDtoValidator.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Validators/Projects/UpdateProjectDtoValidator.cs.html"><code>UpdateProjectDtoValidator.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Validators/Tasks/CreateTaskDtoValidator.cs.html"><code>CreateTaskDtoValidator.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Validators/Tasks/UpdateTaskDtoValidator.cs.html"><code>UpdateTaskDtoValidator.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Application/Validators/Users/SetUserRolesDtoValidator.cs.html"><code>SetUserRolesDtoValidator.cs.html</code></a></li>
+  </ul>
+</section>
+<section class="card">
+  <h2>Infrastructure</h2>
+  <ul>
+    <li><a href="ProjectManagementSystem.Infrastructure/DependencyInjection.html"><code>DependencyInjection.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Infrastructure/Persistence/ApplicationDbContext.html"><code>ApplicationDbContext.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Infrastructure/Persistence/ApplicationDbContextFactory.html"><code>ApplicationDbContextFactory.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Infrastructure/Persistence/ApplicationUser.html"><code>ApplicationUser.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Infrastructure/Persistence/IdentitySeeder.html"><code>IdentitySeeder.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Infrastructure/Persistence/Migrations/20261117064716_InitialCreate.Designer.html"><code>20261117064716_InitialCreate.Designer.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Infrastructure/Persistence/Migrations/20261117064716_InitialCreate.html"><code>20261117064716_InitialCreate.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Infrastructure/Persistence/Migrations/ApplicationDbContextModelSnapshot.html"><code>ApplicationDbContextModelSnapshot.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Infrastructure/ProjectManagementSystem.Infrastructure.csproj.html"><code>ProjectManagementSystem.Infrastructure.csproj.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Infrastructure/Repositories/ProjectRepository.html"><code>ProjectRepository.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Infrastructure/Repositories/TaskRepository.html"><code>TaskRepository.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Infrastructure/Services/AuthService.html"><code>AuthService.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Infrastructure/Services/PermissionClaimsTransformation.html"><code>PermissionClaimsTransformation.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Infrastructure/Services/UserAdminService.html"><code>UserAdminService.html</code></a></li>
+  </ul>
+</section>
+<section class="card">
+  <h2>Api</h2>
+  <ul>
+    <li><a href="ProjectManagementSystem.Api/appsettings.Development.json.html"><code>appsettings.Development.json.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Api/appsettings.json.html"><code>appsettings.json.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Api/Authorization/AuthorizationExtensions.cs.html"><code>AuthorizationExtensions.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Api/Controllers/AuthController.cs.html"><code>AuthController.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Api/Controllers/ProjectsController.cs.html"><code>ProjectsController.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Api/Controllers/RolesController.cs.html"><code>RolesController.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Api/Controllers/TasksController.cs.html"><code>TasksController.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Api/Controllers/UsersController.cs.html"><code>UsersController.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Api/Middleware/ExceptionHandlingMiddleware.cs.html"><code>ExceptionHandlingMiddleware.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Api/Program.cs.html"><code>Program.cs.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Api/ProjectManagementSystem.Api.csproj.html"><code>ProjectManagementSystem.Api.csproj.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Api/Properties/launchSettings.json.html"><code>launchSettings.json.html</code></a></li>
+    <li><a href="ProjectManagementSystem.Api/Validation/InputValidation.cs.html"><code>InputValidation.cs.html</code></a></li>
+  </ul>
+</section>
+</main>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — افتح الصفحة ثم ارجع إلى الملف المصدري المقابل في src.</footer>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح ملف BaseEntity.cs — الكيان الأساسي</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح ملف BaseEntity.cs خطوة بخطوة</h1>
+<p>دليل للمبتدئ: ما هي الخصائص المشتركة بين الكيانات؟ وكيف يعمل الحذف الناعم Soft Delete؟</p>
+</div></header>
+<main>
+<section class="card">
+<h2>قبل أن نبدأ: ما وظيفة هذا الملف؟</h2>
+<p>يُعرّف هذا الملف صنفاً أساسياً <b>abstract</b> اسمه <code>BaseEntity</code> داخل طبقة Domain. الكيانات الأخرى مثل <code>Project</code> ترث منه لتحصل على نفس الحقول: المعرف، تواريخ الإنشاء والتحديث، وعلامات الحذف الناعم. الملف لا يحتوي منطق قاعدة بيانات ولا استعلامات؛ هو مجرد شكل بيانات مشترك.</p>
+<div class="flow"><span>إنشاء سجل</span> ← <span>تعيين CreatedAt</span> ← <span>تحديث UpdatedAt</span> ← <span>حذف ناعم: IsDeleted + DeletedAt</span></div>
+</section>
+
+<section class="card">
+<h2>1) مساحة الأسماء والصنف الأساسي</h2>
+<pre>namespace ProjectManagementSystem.Domain.Entities;
+
+// خصائص مشتركة بين الجداول (Id + تواريخ + Soft Delete)
+public abstract class BaseEntity
+{</pre>
+<ul>
+<li><code>namespace ProjectManagementSystem.Domain.Entities</code>: يضع الأنواع في مساحة أسماء الكيانات ضمن مشروع Domain.</li>
+<li>التعليق العربي يوضح نية الملف: خصائص مشتركة بين الجداول.</li>
+<li><code>public abstract class BaseEntity</code>: صنف عام لكنه <b>مجرد</b>؛ لا يمكن إنشاء كائن منه مباشرة، بل يُورَّث فقط.</li>
+</ul>
+<div class="explain"><b>لماذا abstract؟</b> ليجبر المصمم على استخدام صنف فرعي (مثل <code>Project</code>) يمثل كياناً حقيقياً في النموذج، مع الاحتفاظ بالحقول المشتركة في مكان واحد.</div>
+</section>
+
+<section class="card">
+<h2>2) خصائص الهوية والزمن</h2>
+<pre>    public int Id { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime? UpdatedAt { get; set; }</pre>
+<table><tr><th>الخاصية</th><th>النوع</th><th>المعنى في الكود</th></tr>
+<tr><td><code>Id</code></td><td><code>int</code></td><td>معرف رقمي للسجل. في هذا الملف لا يُحدد كيف يُولَّد؛ ذلك يقع عادة في طبقة التخزين.</td></tr>
+<tr><td><code>CreatedAt</code></td><td><code>DateTime</code></td><td>وقت الإنشاء. القيمة الافتراضية عند إنشاء الكائن في الذاكرة هي <code>DateTime.UtcNow</code> (توقيت UTC).</td></tr>
+<tr><td><code>UpdatedAt</code></td><td><code>DateTime?</code></td><td>وقت آخر تحديث إن وُجد. علامة <code>?</code> تعني أن القيمة قد تكون <code>null</code> إذا لم يُحدَّث السجل بعد.</td></tr></table>
+<div class="explain">استخدام <code>UtcNow</code> يقلل لبس المناطق الزمنية عند حفظ التواريخ في قاعدة بيانات أو عرضها لاحقاً من طبقات أخرى.</div>
+</section>
+
+<section class="card">
+<h2>3) حقول الحذف الناعم (Soft Delete)</h2>
+<pre>    public bool IsDeleted { get; set; } = false;
+
+    public DateTime? DeletedAt { get; set; }
+}</pre>
+<table><tr><th>الخاصية</th><th>القيمة الافتراضية</th><th>الدور</th></tr>
+<tr><td><code>IsDeleted</code></td><td><code>false</code></td><td>علامة منطقية: هل اعتُبر السجل محذوفاً منطقياً دون حذف صفه فعلياً من التخزين؟</td></tr>
+<tr><td><code>DeletedAt</code></td><td><code>null</code></td><td>وقت تنفيذ الحذف الناعم إن طُبِّق؛ يبقى فارغاً ما دام السجل غير محذوف.</td></tr></table>
+<div class="explain"><b>الحقول هنا، والتصفية في التخزين:</b> هذا الملف يوفّر <code>IsDeleted</code> و<code>DeletedAt</code> فقط. استبعاد المحذوف يحدث في <code>ApplicationDbContext</code> عبر <code>HasQueryFilter</code>، لا داخل الكيان نفسه.</div>
+</section>
+
+<section class="card">
+<h2>4) خلاصة تحفظها</h2>
+<ul>
+<li><code>BaseEntity</code> صنف مجرد يجمع حقولاً مشتركة للكيانات الموروثة.</li>
+<li><code>Id</code> للمعرف، و<code>CreatedAt</code> / <code>UpdatedAt</code> لتتبع الزمن.</li>
+<li>الحذف الناعم: <code>IsDeleted</code> و<code>DeletedAt</code> — إشارة في البيانات وليس حذفاً فيزيائياً في هذا الملف.</li>
+<li>في هذا المشروع، <code>Project</code> يرث <code>BaseEntity</code>؛ أما <code>ProjectTask</code> فلا يرثه (راجع ملف المهمة).</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>ملفات ذات صلة</h2>
+<ul>
+<li><a href="../ProjectManagementSystem.Domain.csproj.html">ProjectManagementSystem.Domain.csproj.html</a> — بطاقة مشروع طبقة Domain.</li>
+<li><a href="Project.cs.html">Project.cs.html</a> — كيان المشروع الذي يرث <code>BaseEntity</code>.</li>
+<li><a href="ProjectTask.cs.html">ProjectTask.cs.html</a> — كيان المهمة (بدون وراثة من <code>BaseEntity</code>).</li>
+<li><a href="../Enums/ProjectStatus.cs.html">ProjectStatus.cs.html</a> — تعداد حالة المشروع.</li>
+<li><a href="../../ProjectManagementSystem.Infrastructure/Persistence/ApplicationDbContext.html">ApplicationDbContext.html</a> — فلتر الاستعلام الذي يخفي المشروع المحذوف.</li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

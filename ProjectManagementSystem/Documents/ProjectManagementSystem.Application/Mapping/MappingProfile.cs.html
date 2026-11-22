@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح MappingProfile.cs — AutoMapper</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح ملف MappingProfile.cs خطوة بخطوة</h1>
+<p>تعريفات CreateMap بين كيانات Domain و DTOs</p>
+</div></header>
+<main>
+<section class="card">
+<h2>قبل أن نبدأ: ما وظيفة هذا الملف؟</h2>
+<p>كلاس يرث <code>Profile</code> من AutoMapper. في المُنشئ يُسجَّل ستة تعيينات: من كيان إلى DTO للقراءة، ومن DTO الإنشاء/التحديث إلى كيان مع <code>MemberList.Source</code> (التحقق من أن كل خاصية في المصدر لها وجهة).</p>
+<div class="flow"><span>Entity</span> ↔ <span>DTO</span> ↔ <span>ProjectService / TaskService</span></div>
+</section>
+
+<section class="card">
+<h2>1) الكود الكامل</h2>
+<pre>public sealed class MappingProfile : Profile
+{
+    public MappingProfile()
+    {
+        CreateMap&lt;Project, ProjectResponseDto&gt;();
+        CreateMap&lt;CreateProjectDto, Project&gt;(MemberList.Source);
+        CreateMap&lt;UpdateProjectDto, Project&gt;(MemberList.Source);
+
+        CreateMap&lt;ProjectTask, TaskResponseDto&gt;();
+        CreateMap&lt;CreateTaskDto, ProjectTask&gt;(MemberList.Source);
+        CreateMap&lt;UpdateTaskDto, ProjectTask&gt;(MemberList.Source);
+    }
+}</pre>
+</section>
+
+<section class="card">
+<h2>2) جدول المصدر → الوجهة</h2>
+<table><tr><th>المصدر (Source)</th><th>الوجهة (Destination)</th><th>MemberList</th></tr>
+<tr><td><code>Project</code></td><td><code>ProjectResponseDto</code></td><td>افتراضي</td></tr>
+<tr><td><code>CreateProjectDto</code></td><td><code>Project</code></td><td>Source</td></tr>
+<tr><td><code>UpdateProjectDto</code></td><td><code>Project</code></td><td>Source</td></tr>
+<tr><td><code>ProjectTask</code></td><td><code>TaskResponseDto</code></td><td>افتراضي</td></tr>
+<tr><td><code>CreateTaskDto</code></td><td><code>ProjectTask</code></td><td>Source</td></tr>
+<tr><td><code>UpdateTaskDto</code></td><td><code>ProjectTask</code></td><td>Source</td></tr></table>
+<div class="explain"><code>MemberList.Source</code> يعني: عند التحقق من التعيين، يجب أن تُطابق أسماء الخصائص في DTO خصائص في الكيان — يساعد على اكتشاف DTO ناقص عند التشغيل عبر <code>AssertMappingsAreValid</code>.</div>
+</section>
+
+<section class="card">
+<h2>خلاصة تحفظها</h2>
+<ul>
+<li>لا تعيينات يدوية لكل حقل — الاعتماد على تطابق الأسماء.</li>
+<li>القراءة: Entity → ResponseDto؛ الكتابة: Create/Update Dto → Entity.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>ملفات مرتبطة</h2>
+<ul>
+<li><a href="../DependencyInjection.cs.html">DependencyInjection.cs</a></li>
+<li><a href="../Services/ProjectService.cs.html">Services/ProjectService.cs</a></li>
+<li><a href="../Services/TaskService.cs.html">Services/TaskService.cs</a></li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

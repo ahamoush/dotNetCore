@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح AuthService.cs — التسجيل وتسجيل الدخول وJWT</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح ملف AuthService.cs خطوة بخطوة</h1>
+<p>تسجيل مستخدم جديد، تسجيل الدخول، وإنشاء JWT مع الأدوار والصلاحيات في الاستجابة.</p>
+</div></header>
+<main>
+<section class="card">
+<h2>قبل أن نبدأ: ما وظيفة هذا الملف؟</h2>
+<p>ينفّذ <code>IAuthService</code>: يستخدم <code>UserManager&lt;ApplicationUser&gt;</code> لإنشاء المستخدمين والتحقق من كلمات المرور، ثم يبني <code>AuthResponseDto</code> يتضمن توكن JWT وقائمة الصلاحيات المشتقة من الأدوار عبر <code>RolePermissionMap</code>.</p>
+<div class="flow"><span>Register</span> ← <span>دور Member</span> ← <span>Login</span> ← <span>Claims</span> ← <span>JWT</span></div>
+</section>
+
+<section class="card">
+<h2>1) التسجيل — RegisterAsync</h2>
+<pre>var user = new ApplicationUser
+{
+    UserName = dto.Email,
+    Email = dto.Email,
+    FullName = dto.FullName
+};
+var create = await _users.CreateAsync(user, dto.Password);
+// ...
+var addRole = await _users.AddToRoleAsync(user, AppRoles.Member);</pre>
+<table>
+<tr><th>الخطوة</th><th>النتيجة عند الفشل</th></tr>
+<tr><td>إنشاء المستخدم بكلمة المرور من الـ DTO</td><td><code>AuthResult.Failure</code> مع رسائل Identity</td></tr>
+<tr><td>إضافة دور <code>AppRoles.Member</code></td><td>نفس النمط</td></tr>
+<tr><td>نجاح</td><td><code>CreateResponseAsync</code> → توكن + بيانات المستخدم</td></tr>
+</table>
+</section>
+
+<section class="card">
+<h2>2) تسجيل الدخول — LoginAsync</h2>
+<pre>var user = await _users.FindByEmailAsync(dto.Email);
+if (user is null || !await _users.CheckPasswordAsync(user, dto.Password))
+    return AuthResult.Failure("Invalid email or password.");</pre>
+<div class="explain">لا يُفرَّق رسالة الخطأ بين «البريد غير موجود» و«كلمة المرور خاطئة» — نفس النص لأسباب أمنية.</div>
+</section>
+
+<section class="card">
+<h2>3) إنشاء التوكن — Claims وإعدادات Jwt</h2>
+<pre>var claims = new List&lt;Claim&gt;
+{
+    new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+    new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+    new Claim(AppClaimTypes.Name, user.FullName)
+};
+foreach (string role in roles)
+    claims.Add(new Claim(AppClaimTypes.Role, role));</pre>
+<table>
+<tr><th>مفتاح الإعدادات</th><th>الاستخدام في الكود</th></tr>
+<tr><td><code>Jwt:Issuer</code></td><td>مُصدِر التوكن</td></tr>
+<tr><td><code>Jwt:Audience</code></td><td>الجمهور المتوقع</td></tr>
+<tr><td><code>Jwt:Key</code></td><td>مفتاح HMAC (يُقرأ عبر <code>ReadKey()</code> — يجب أن يكون طوله ≥ 32 حرفاً؛ القيمة تبقى في الإعدادات فقط)</td></tr>
+<tr><td><code>Jwt:ExpiresInMinutes</code></td><td>مدة الصلاحية بالدقائق؛ إن لم تُعرَف أو ≤ 0 يُستخدم 60</td></tr>
+</table>
+<pre>var token = new JwtSecurityToken(
+    issuer: _configuration["Jwt:Issuer"],
+    audience: _configuration["Jwt:Audience"],
+    claims: claims,
+    expires: expiresAt,
+    signingCredentials: credentials);</pre>
+<p>الصلاحيات <code>Permissions</code> تُملأ في <code>AuthResponseDto</code> من <code>RolePermissionMap.ForRoles(roles)</code> و<strong>لا تُضاف كـ Claims داخل التوكن</strong> في هذا الملف.</p>
+<div class="warn"><b>تنبيه:</b> لا تنسخ قيمة <code>Jwt:Key</code> أو كلمات مرور إلى التوثيق أو المستودع العام.</div>
+</section>
+
+<section class="card">
+<h2>ملخص</h2>
+<p><code>AuthService</code> هو الجسر بين Identity وJWT: عضو جديد يحصل على دور Member، والاستجابة تحمل التوكن والأدوار وقائمة الصلاحيات المحسوبة للواجهة أو العميل.</p>
+</section>
+
+<section class="card">
+<h2>ملفات مرتبطة</h2>
+<ul>
+<li><a href="../DependencyInjection.html">DependencyInjection.html</a></li>
+<li><a href="../Persistence/ApplicationUser.html">Persistence/ApplicationUser.html</a></li>
+<li><a href="PermissionClaimsTransformation.html">PermissionClaimsTransformation.html</a></li>
+<li><a href="UserAdminService.html">UserAdminService.html</a></li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح InitialCreate.Designer.cs</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح ملف 20261117064716_InitialCreate.Designer.cs خطوة بخطوة</h1>
+<p>رفيق النموذج (model snapshot) لترحيل واحد — وليس ملف الترحيل الذي يُنفَّذ على SQL.</p>
+</div></header>
+<main>
+<section class="card">
+<h2>قبل أن نبدأ: ما وظيفة هذا الملف؟</h2>
+<p>يبدأ بـ <code>// &lt;auto-generated /&gt;</code> ويُنشأ تلقائياً مع الترحيل. الصنف الجزئي <code>InitialCreate</code> يحمل السمة <code>[Migration("20261117064716_InitialCreate")]</code> ويُنفّذ <code>BuildTargetModel</code> لوصف حالة نموذج EF <strong>بعد</strong> تطبيق هذا الترحيل.</p>
+<div class="explain">لفهم <strong>ما الذي يُنشئ في قاعدة البيانات</strong> (جداول وأعمدة وفهارس) راجع <a href="20261117064716_InitialCreate.html">20261117064716_InitialCreate.html</a> وطريقة <code>Up()</code>.</div>
+<div class="warn">لا تُعدّل هذا الملف يدوياً. المحتوى طويل (مئات الأسطر) — الشرح هنا ملخّص للكيانات فقط.</div>
+</section>
+
+<section class="card">
+<h2>1) رأس الملف (مقتطف)</h2>
+<pre>// &lt;auto-generated /&gt;
+[DbContext(typeof(ApplicationDbContext))]
+[Migration("20261117064716_InitialCreate")]
+partial class InitialCreate
+{
+    protected override void BuildTargetModel(ModelBuilder modelBuilder)
+    {
+        modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
+        SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+        // modelBuilder.Entity(...) لكل كيان
+    }
+}</pre>
+</section>
+
+<section class="card">
+<h2>2) الكيانات / الجداول التي يصفها BuildTargetModel</h2>
+<table>
+<tr><th>الكيان في النموذج</th><th>جدول SQL</th></tr>
+<tr><td>IdentityRole</td><td>AspNetRoles</td></tr>
+<tr><td>IdentityRoleClaim&lt;string&gt;</td><td>AspNetRoleClaims</td></tr>
+<tr><td>IdentityUserClaim&lt;string&gt;</td><td>AspNetUserClaims</td></tr>
+<tr><td>IdentityUserLogin&lt;string&gt;</td><td>AspNetUserLogins</td></tr>
+<tr><td>IdentityUserRole&lt;string&gt;</td><td>AspNetUserRoles</td></tr>
+<tr><td>IdentityUserToken&lt;string&gt;</td><td>AspNetUserTokens</td></tr>
+<tr><td>ApplicationUser</td><td>AspNetUsers (+ FullName)</td></tr>
+<tr><td>Project</td><td>Projects</td></tr>
+<tr><td>ProjectTask</td><td>Tasks</td></tr>
+</table>
+<p class="muted">أقسام إضافية في الملف تربط العلاقات (مثل ProjectTask → Project) وتكرّر تكوين العلاقات بين جداول Identity.</p>
+</section>
+
+<section class="card">
+<h2>ملخص</h2>
+<p>Designer يخزّن «صورة» النموذج المرتبطة بهذا الترحيل؛ أحدث صورة شاملة للمشروع بأكمله توجد في <code>ApplicationDbContextModelSnapshot</code>.</p>
+</section>
+
+<section class="card">
+<h2>ملفات مرتبطة</h2>
+<ul>
+<li><a href="20261117064716_InitialCreate.html">20261117064716_InitialCreate.html</a></li>
+<li><a href="ApplicationDbContextModelSnapshot.html">ApplicationDbContextModelSnapshot.html</a></li>
+<li><a href="../ApplicationDbContext.html">ApplicationDbContext.html</a></li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

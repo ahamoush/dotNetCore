@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح IdentitySeeder.cs</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح ملف IdentitySeeder.cs خطوة بخطوة</h1>
+<p>تهيئة الأدوار وحساب SuperAdmin الأول من الإعدادات عند بدء التطبيق.</p>
+</div></header>
+<main>
+<section class="card">
+<h2>قبل أن نبدأ: ما وظيفة هذا الملف؟</h2>
+<p>دوال ثابتة تُستدعى من الـ API (مثل <code>Program.cs</code>): <code>SeedRolesAsync</code> ثم <code>SeedSuperAdminAsync</code>.</p>
+<div class="flow"><span>AppRoles.All</span> ← <span>إنشاء أدوار ناقصة</span> ← <span>قراءة Seed:*</span> ← <span>مستخدم + دور</span></div>
+</section>
+
+<section class="card">
+<h2>1) SeedRolesAsync — idempotent</h2>
+<pre>foreach (var roleName in AppRoles.All)
+{
+    if (await roleManager.RoleExistsAsync(roleName))
+        continue;
+    var result = await roleManager.CreateAsync(new IdentityRole(roleName));
+    // يرمي InvalidOperationException عند الفشل
+}</pre>
+<div class="explain"><b>متكرر بأمان:</b> يتحقق من وجود الدور قبل الإنشاء — إعادة التشغيل لا تكرّر الأدوار.</div>
+</section>
+
+<section class="card">
+<h2>2) SeedSuperAdminAsync — مفاتيح الإعدادات</h2>
+<table>
+<tr><th>مفتاح الإعدادات</th><th>الدور في الكود</th></tr>
+<tr><td><code>Seed:SuperAdmin:Email</code></td><td>البريد واسم المستخدم؛ القيمة في ملف الإعدادات فقط</td></tr>
+<tr><td><code>Seed:SuperAdmin:Password</code></td><td>كلمة المرور عند الإنشاء؛ لا تُنسخ في التوثيق</td></tr>
+<tr><td><code>Seed:SuperAdmin:FullName</code></td><td>اختياري؛ افتراضي النص «Super Admin» إن كان فارغاً</td></tr>
+</table>
+<pre>if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+    return;</pre>
+<p>إن غاب البريد أو كلمة المرور يتخطى التهيئة دون خطأ.</p>
+<pre>var user = await users.FindByEmailAsync(email);
+if (user is null) { /* CreateAsync */ }
+if (!await users.IsInRoleAsync(user, AppRoles.SuperAdmin))
+    await users.AddToRoleAsync(user, AppRoles.SuperAdmin);</pre>
+<div class="explain"><b>متكرر بأمان:</b> إن وُجد المستخدم يُكتفى بإضافة الدور إن لم يكن موجوداً؛ لا يُعاد إنشاء الحساب.</div>
+<div class="warn"><b>تنبيه أمني:</b> احفظ <code>Seed:SuperAdmin:Password</code> في إعدادات آمنة (مثل User Secrets في التطوير) وليس في مستودع عام.</div>
+</section>
+
+<section class="card">
+<h2>ملخص</h2>
+<p>يضمن وجود كل أدوار <code>AppRoles</code> وحساب مدير أعلى واحد قابل للتكوين — مع فحوصات وجود تمنع التكرار غير الضروري.</p>
+</section>
+
+<section class="card">
+<h2>ملفات مرتبطة</h2>
+<ul>
+<li><a href="ApplicationUser.html">ApplicationUser.html</a></li>
+<li><a href="../DependencyInjection.html">DependencyInjection.html</a></li>
+<li><a href="../Services/UserAdminService.html">Services/UserAdminService.html</a></li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

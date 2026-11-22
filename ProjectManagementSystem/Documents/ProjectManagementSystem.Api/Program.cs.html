@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح ملف Program.cs — JWT و Swagger و ASP.NET Core</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح ملف Program.cs خطوة بخطوة</h1>
+<p>دليل للمبتدئ: ماذا تفعل الأسطر؟ وما معنى الكلمات والرموز المهمة؟</p>
+</div></header>
+<main>
+<section class="card">
+<h2>قبل أن نبدأ: ما وظيفة هذا الملف؟</h2>
+<p>هذا الملف هو نقطة تشغيل تطبيق <b>ASP.NET Core Web API</b>. يجهّز الخدمات التي يحتاجها التطبيق، ويضبط التحقق من هوية المستخدم باستخدام JWT، ويجهّز Swagger لتجربة الـ API، ثم يبني مسار استقبال الطلبات ويشغّل التطبيق.</p>
+<div class="flow"><span>قراءة الإعدادات</span> ← <span>تسجيل الخدمات</span> ← <span>إعداد JWT وSwagger</span> ← <span>بناء التطبيق</span> ← <span>Middleware</span> ← <span>تشغيل API</span></div>
+</section>
+
+<section class="card">
+<h2>1) استيراد المكتبات باستخدام using</h2>
+<pre>using System.IdentityModel.Tokens.Jwt;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+
+// استيراد المكتبات المطلوبة
+using ProjectManagementSystem.Api.Authorization;
+using ProjectManagementSystem.Application;
+using ProjectManagementSystem.Application.Authorization;
+using ProjectManagementSystem.Infrastructure;
+using ProjectManagementSystem.Infrastructure.Persistence;</pre>
+<p>كلمة <code>using</code> تخبر C# أنك تريد استخدام أنواع (Classes) موجودة داخل مساحة أسماء (Namespace)، حتى لا تضطر لكتابة اسمها الكامل في كل مرة.</p>
+<table><tr><th>المكتبة</th><th>لماذا نحتاجها؟</th></tr>
+<tr><td><code>System.IdentityModel.Tokens.Jwt</code></td><td>للتعامل مع رموز JWT، ومنها إعداد <code>JwtSecurityTokenHandler</code>.</td></tr>
+<tr><td><code>System.Text</code></td><td>توفّر أدوات النصوص، وهنا نستخدم <code>Encoding.UTF8</code> لتحويل مفتاح نصي إلى بايتات.</td></tr>
+<tr><td><code>Microsoft.AspNetCore.Authentication.JwtBearer</code></td><td>تضيف آلية قراءة JWT المرسل في ترويسة Authorization والتحقق منه.</td></tr>
+<tr><td><code>Microsoft.IdentityModel.Tokens</code></td><td>تحتوي أنواع إعدادات التحقق من التوكن، مثل <code>TokenValidationParameters</code> و<code>SymmetricSecurityKey</code>.</td></tr>
+<tr><td><code>Microsoft.OpenApi</code></td><td>أنواع OpenAPI المستخدمة في تعريف أمان Swagger. قد يختلف الـ namespace المطلوب حسب إصدار حزم Swagger/OpenAPI.</td></tr>
+<tr><td><code>ProjectManagementSystem.*</code></td><td>هذه مساحات أسماء من مشروعك: طبقة API، وApplication، وInfrastructure، والتخزين، والتفويض.</td></tr></table>
+<div class="explain">في الملف المصدري يوجد التعليق العربي <code>// استيراد المكتبات المطلوبة</code> قبل أسطر مساحات أسماء المشروع.</div>
+</section>
+
+<section class="card">
+<h2>2) إيقاف إعادة تسمية Claims تلقائياً</h2>
+<pre>JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();</pre>
+<p><code>JwtSecurityTokenHandler</code> كلاس يتعامل مع JWT. وداخلَه خرائط تربط أسماء الـ Claims بأسماء أخرى.</p>
+<ul>
+<li><code>DefaultInboundClaimTypeMap</code>: خريطة التحويل عند قراءة التوكن الوارد.</li>
+<li><code>DefaultOutboundClaimTypeMap</code>: خريطة التحويل عند إنشاء/إخراج التوكن.</li>
+<li><code>Clear()</code>: تمسح عناصر الخريطة.</li>
+</ul>
+<p>الهدف هو الحفاظ على أسماء الـ Claims كما هي، بدل تحويل بعض الأسماء تلقائياً إلى أسماء أخرى. وهذا مهم إذا كان تطبيقك يتوقع أسماء محددة مثل <code>role</code> أو أسماء معرفة في <code>AppClaimTypes</code>.</p>
+</section>
+
+<section class="card">
+<h2>3) إنشاء Builder وتجهيز الخدمات</h2>
+<pre>var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);</pre>
+<p><code>var</code> تعني أن C# يستنتج نوع المتغير تلقائياً. و<code>builder</code> متغير يحمل أداة إعداد التطبيق.</p>
+<ul>
+<li><code>WebApplication.CreateBuilder(args)</code>: ينشئ إعدادات بناء التطبيق، ويقرأ إعدادات التشغيل وسطر الأوامر وملفات الإعدادات مثل <code>appsettings.json</code>.</li>
+<li><code>builder.Services</code>: حاوية تسجيل الخدمات (Dependency Injection Container).</li>
+<li><code>AddControllers()</code>: يفعّل Controllers لاستقبال طلبات HTTP وتنفيذ Actions.</li>
+<li><code>AddApplication()</code> (في <code>Application.DependencyInjection</code>): <code>AddValidatorsFromAssembly</code> لكل FluentValidation في الطبقة، <code>AddAutoMapper</code> لملفات الـ Mapping، وتسجيل <code>IProjectService</code> و<code>ITaskService</code> كـ Scoped.</li>
+<li><code>AddInfrastructure(builder.Configuration)</code> (في <code>Infrastructure.DependencyInjection</code>): <code>ApplicationDbContext</code> مع SQL Server و<code>DefaultConnection</code>، <code>IdentityCore</code> مع قواعد كلمة السر والأدوار، <code>IProjectRepository</code> و<code>ITaskRepository</code>، <code>IAuthService</code> و<code>IUserAdminService</code>، و<code>PermissionClaimsTransformation</code> كـ <code>IClaimsTransformation</code>.</li>
+</ul>
+<div class="explain">فكرة Dependency Injection: بدلاً من أن تنشئ كل Class اعتماداته بنفسه باستخدام <code>new</code>، تسجّل الخدمات هنا، ثم يوفّرها ASP.NET Core عند الحاجة.</div>
+</section>
+
+<section class="card">
+<h2>4) قراءة مفتاح JWT من الإعدادات</h2>
+<pre>var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("Jwt:Key is missing.");</pre>
+<ul>
+<li><code>builder.Configuration</code>: مصدر إعدادات التطبيق.</li>
+<li><code>["Jwt:Key"]</code>: يطلب قيمة المفتاح <code>Key</code> الموجودة داخل القسم <code>Jwt</code> في ملف الإعدادات.</li>
+<li><code>??</code>: معامل null-coalescing؛ إذا كانت القيمة على اليسار <code>null</code>، ينفّذ ما على اليمين.</li>
+<li><code>throw</code>: يرمي استثناء ويوقف التنفيذ في هذا الموضع.</li>
+<li><code>InvalidOperationException</code>: نوع استثناء يشير إلى أن العملية لا يمكن تنفيذها بسبب حالة غير صحيحة، وهنا لأن المفتاح مفقود.</li>
+</ul>
+<p>مثال توضيحي لشكل الإعدادات في <code>appsettings.json</code> (لا تضع مفتاحاً حقيقياً أو سرياً في مستودع عام):</p>
+<pre>{
+  "Jwt": {
+    "Key": "&lt;مفتاح-JWT-سري-32+ حرف&gt;",
+    "Issuer": "YourIssuer",
+    "Audience": "YourAudience"
+  }
+}</pre>
+<div class="warn"><b>تنبيه أمني:</b> لا تستخدم مفتاحاً قصيراً أو منشوراً على GitHub. في بيئة الإنتاج خزّنه في Secret Manager أو متغيرات البيئة أو مخزن أسرار مناسب، واستخدم مفتاحاً عشوائياً قوياً.</div>
+</section>
+
+<section class="card">
+<h2>5) إعداد المصادقة Authentication باستخدام JWT</h2>
+<pre>builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            RoleClaimType = AppClaimTypes.Role,
+            NameClaimType = AppClaimTypes.Name
+        };
+    });</pre>
+<p><code>AddAuthentication(...)</code> يضيف نظام المصادقة ويحدد المخطط الافتراضي. و<code>JwtBearerDefaults.AuthenticationScheme</code> يعني أن المخطط الافتراضي هو Bearer JWT.</p>
+<p><code>AddJwtBearer(options =&gt; { ... })</code> يضيف معالج JWT Bearer. الرمز <code>=&gt;</code> يسمى Lambda Operator؛ اقرأه هنا بمعنى: «خذ options ونفّذ الإعدادات التالية».</p>
+<h3>شرح الخيارات</h3>
+<table><tr><th>السطر</th><th>المعنى</th></tr>
+<tr><td><code>MapInboundClaims = false</code></td><td>لا تحوّل أسماء Claims الواردة تلقائياً. يساعد على إبقاء الأسماء كما صدرت في التوكن.</td></tr>
+<tr><td><code>ValidateIssuer = true</code></td><td>تحقق من الجهة التي أصدرت التوكن.</td></tr>
+<tr><td><code>ValidateAudience = true</code></td><td>تحقق أن التوكن موجّه إلى هذا التطبيق/الجمهور.</td></tr>
+<tr><td><code>ValidateLifetime = true</code></td><td>تحقق من صلاحية الوقت، مثل تاريخ الانتهاء <code>exp</code>.</td></tr>
+<tr><td><code>ValidateIssuerSigningKey = true</code></td><td>تحقق من التوقيع باستخدام المفتاح المحدد.</td></tr>
+<tr><td><code>ValidIssuer</code></td><td>القيمة المتوقعة للمُصدِر، مأخوذة من <code>Jwt:Issuer</code>.</td></tr>
+<tr><td><code>ValidAudience</code></td><td>القيمة المتوقعة للجمهور، مأخوذة من <code>Jwt:Audience</code>.</td></tr>
+<tr><td><code>IssuerSigningKey</code></td><td>المفتاح الذي سيُستخدم للتحقق من توقيع التوكن.</td></tr>
+<tr><td><code>RoleClaimType</code></td><td>اسم الـ Claim الذي يعتبره النظام دور المستخدم. هنا معرف في مشروعك باسم <code>AppClaimTypes.Role</code>.</td></tr>
+<tr><td><code>NameClaimType</code></td><td>اسم الـ Claim الذي يمثل اسم المستخدم. هنا <code>AppClaimTypes.Name</code>.</td></tr></table>
+<p>السطر التالي يحوّل المفتاح النصي إلى بايتات بترميز UTF-8، ثم ينشئ مفتاحاً متماثلاً:</p>
+<pre>new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))</pre>
+<p>«متماثل» يعني أن المفتاح السري نفسه يُستخدم عند توقيع التوكن وعند التحقق من توقيعه. لذلك يجب أن تتطابق إعدادات إنشاء التوكن والتحقق منه.</p>
+</section>
+
+<section class="card">
+<h2>6) إضافة سياسات الصلاحيات</h2>
+<pre>builder.Services.AddPermissionPolicies();</pre>
+<p>Extension في <code>Api/Authorization/AuthorizationExtensions.cs</code>: تستدعي <code>RolePermissionMap.EnsureEveryPermissionHasARole()</code> (تفشل الإقلاع إن وُجدت صلاحية بلا دور)، ثم <code>FallbackPolicy</code> يتطلب مستخدماً مصادقاً عليه، ثم لكل عنصر في <code>AppPermissions.All</code> تُنشأ سياسة بنفس الاسم وتستخدم <code>RequireRole</code> مع الأدوار من <code>RolePermissionMap.RolesWith(permission)</code>.</p>
+<p>الفرق المهم:</p>
+<ul><li><b>Authentication — المصادقة:</b> من أنت؟ هل التوكن صحيح؟</li><li><b>Authorization — التفويض:</b> بعد معرفة هويتك، هل مسموح لك تنفيذ هذه العملية؟</li></ul>
+</section>
+
+<section class="card">
+<h2>7) إعداد Swagger وواجهة OpenAPI</h2>
+<pre>builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =&gt;
+{
+    options.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "الصق التوكن فقط، من غير كلمة Bearer."
+    });
+
+    options.AddSecurityRequirement(document =&gt; new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("bearer", document)] = []
+    });
+});</pre>
+<ul>
+<li><code>AddEndpointsApiExplorer()</code>: يضيف مستكشف معلومات نقاط النهاية ليستطيع Swagger جمع معلومات الـ API.</li>
+<li><code>AddSwaggerGen(...)</code>: يسجّل مولّد مستند Swagger/OpenAPI.</li>
+<li><code>AddSecurityDefinition("bearer", ...)</code>: يعرّف طريقة المصادقة التي ستظهر في Swagger باسم <code>bearer</code>.</li>
+<li><code>Type = Http</code>: نوع المصادقة هو HTTP Authentication.</li>
+<li><code>Scheme = "bearer"</code>: نستخدم Bearer Token.</li>
+<li><code>BearerFormat = "JWT"</code>: توضيح أن صيغة الرمز JWT.</li>
+<li><code>Description</code>: نص إرشادي يظهر للمستخدم في Swagger UI.</li>
+<li><code>AddSecurityRequirement(...)</code>: يضيف متطلب الأمان إلى مستند OpenAPI، بحيث تعرف الواجهة أن العمليات تتطلب هذا المخطط.</li>
+<li><code>new OpenApiSecuritySchemeReference("bearer", document)</code>: يشير إلى تعريف الأمان الذي اسمه <code>bearer</code>.</li>
+<li><code>[]</code>: مجموعة فارغة في صياغة C# الحديثة، وتُستخدم هنا لقائمة نطاقات (scopes) فارغة.</li>
+</ul>
+<div class="explain">بعد تشغيل المشروع وفتح Swagger UI، اضغط زر Authorize والصق قيمة التوكن. حسب الوصف الموجود في الكود، الصق التوكن نفسه دون كتابة كلمة <code>Bearer</code>؛ الواجهة تتولى تنسيق ترويسة المصادقة.</div>
+<div class="warn">تنبيه توافق: واجهات OpenAPI تختلف بين إصدارات الحزم. إذا ظهر خطأ في <code>Microsoft.OpenApi</code> أو <code>OpenApiSecuritySchemeReference</code> أو صيغة <code>AddSecurityRequirement</code>، افحص إصدار Swashbuckle وMicrosoft.OpenApi المستخدمين، وطبّق الصيغة المطابقة لهما.</div>
+</section>
+
+<section class="card">
+<h2>8) بناء التطبيق والتحقق من الـ Mappings</h2>
+<pre>var app = builder.Build();
+app.Services.AssertMappingsAreValid();</pre>
+<ul>
+<li><code>builder.Build()</code>: ينهي مرحلة الإعداد ويبني كائن التطبيق القابل لتلقي الطلبات.</li>
+<li><code>app.Services</code>: يتيح الوصول إلى الخدمات المسجلة.</li>
+<li><code>AssertMappingsAreValid()</code>: Extension في <code>Application.DependencyInjection</code> يستدعي <code>services.GetRequiredService&lt;IConfigurationProvider&gt;().AssertConfigurationIsValid()</code> — فحص AutoMapper عند الإقلاع قبل استقبال الطلبات.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>9) إنشاء Scope وتشغيل Seeder</h2>
+<pre>using (var scope = app.Services.CreateScope())
+{
+    await IdentitySeeder.SeedAsync(scope.ServiceProvider, app.Configuration);
+}</pre>
+<ul>
+<li><code>CreateScope()</code>: ينشئ نطاق خدمات مؤقتاً. هذا مهم للخدمات ذات العمر <code>Scoped</code> مثل DbContext.</li>
+<li><code>using (...)</code>: يضمن التخلص من النطاق وموارده عند الخروج من الكتلة، حتى لو حدث استثناء.</li>
+<li><code>var scope</code>: متغير يحمل النطاق المنشأ.</li>
+<li><code>scope.ServiceProvider</code>: مزوّد الخدمات الخاص بهذا النطاق، ومنه يحصل Seeder على الخدمات التي يحتاجها.</li>
+<li><code>await</code>: ينتظر انتهاء العملية غير المتزامنة دون حجز مسار التنفيذ بالطريقة المتزامنة التقليدية.</li>
+<li><code>IdentitySeeder.SeedAsync(...)</code> (في <code>Infrastructure.Persistence</code>): أولاً <code>SeedRolesAsync</code> ينشئ كل دور في <code>AppRoles.All</code> إن لم يوجد؛ ثم <code>SeedSuperAdminAsync</code> يقرأ <code>Seed:SuperAdmin</code> من الإعدادات ويتخطى إن غاب البريد أو كلمة السر، وإلا ينشئ المستخدم ويضمن دور SuperAdmin.</li>
+<li><code>app.Configuration</code>: يمرر إعدادات التطبيق إلى الدالة.</li>
+</ul>
+<p>وجود الـ Seeder هنا يعني أنه يعمل عند بدء التطبيق. تأكد أن تشغيله المتكرر آمن ولا ينشئ بيانات مكررة.</p>
+</section>
+
+<section class="card">
+<h2>10) إضافة Middleware لمعالجة الاستثناءات</h2>
+<pre>app.UseMiddleware&lt;ProjectManagementSystem.Api.Middleware.ExceptionHandlingMiddleware&gt;();</pre>
+<p>الـ Middleware مكوّن يمر عليه طلب HTTP في طريقه إلى Controller، ويمكنه قراءة الطلب أو تعديل الاستجابة أو تمرير التحكم للمكوّن التالي.</p>
+<p>في <code>ExceptionHandlingMiddleware</code>: يلتقط أي استثناء، يسجّله في <code>ILogger</code>، ويرد للعميل <code>500</code> مع JSON ثابت <code>{"message":"An unexpected error occurred."}</code> دون إرسال تفاصيل الاستثناء للعميل.</p>
+<p><code>&lt;...&gt;</code> هنا تحدد نوع الـ Middleware الذي تريد إضافته.</p>
+</section>
+
+<section class="card">
+<h2>11) تفعيل Swagger في بيئة التطوير فقط</h2>
+<pre>if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}</pre>
+<ul>
+<li><code>if</code>: شرط؛ ينفذ ما بين الأقواس إذا تحقق الشرط.</li>
+<li><code>app.Environment.IsDevelopment()</code>: يتحقق هل التطبيق يعمل في بيئة Development.</li>
+<li><code>UseSwagger()</code>: يقدّم مستند OpenAPI بصيغة JSON.</li>
+<li><code>UseSwaggerUI()</code>: يقدّم واجهة الويب التفاعلية لتجربة الـ API.</li>
+</ul>
+<p>بهذا الإعداد لا تظهر واجهة Swagger إلا في بيئة التطوير. قد تختار إعداداً مختلفاً للإنتاج وفق سياسة الأمان لديك.</p>
+</section>
+
+<section class="card">
+<h2>12) ترتيب مسار الطلبات وتشغيل Controllers</h2>
+<pre>app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+app.Run();</pre>
+<table><tr><th>السطر</th><th>وظيفته</th></tr>
+<tr><td><code>UseHttpsRedirection()</code></td><td>يعيد توجيه طلبات HTTP إلى HTTPS عندما تكون إعدادات الاستضافة تدعم ذلك.</td></tr>
+<tr><td><code>UseAuthentication()</code></td><td>يفحص بيانات المصادقة، ويحاول تحديد المستخدم الحالي من التوكن.</td></tr>
+<tr><td><code>UseAuthorization()</code></td><td>يفحص هل المستخدم مسموح له الوصول إلى المورد أو تنفيذ العملية.</td></tr>
+<tr><td><code>MapControllers()</code></td><td>يربط مسارات Controllers بنظام التوجيه حتى يمكن الوصول إليها عبر HTTP.</td></tr>
+<tr><td><code>Run()</code></td><td>يشغّل التطبيق ويبدأ استقبال الطلبات، ويبقيه عاملاً حتى يتوقف.</td></tr></table>
+<div class="warn"><b>الترتيب مهم:</b> ضع <code>UseAuthentication()</code> قبل <code>UseAuthorization()</code>، لأن التفويض يحتاج إلى معرفة هوية المستخدم التي تنتجها المصادقة.</div>
+</section>
+
+<section class="card">
+<h2>13) معاني الرموز التي تراها كثيراً في C#</h2>
+<table><tr><th>الرمز</th><th>المعنى في هذا الملف</th><th>مثال</th></tr>
+<tr><td><code>;</code></td><td>ينهي التعليمة.</td><td><code>builder.Services.AddControllers();</code></td></tr>
+<tr><td><code>.</code></td><td>الوصول إلى عضو داخل كائن أو نوع.</td><td><code>builder.Services</code></td></tr>
+<tr><td><code>()</code></td><td>استدعاء دالة أو تمرير معاملات لها.</td><td><code>Build()</code></td></tr>
+<tr><td><code>{ }</code></td><td>تحديد كتلة تعليمات أو تهيئة كائن.</td><td>كتلة <code>if</code></td></tr>
+<tr><td><code>[ ]</code></td><td>الوصول إلى قيمة إعداد باستخدام مفتاح نصي.</td><td><code>Configuration["Jwt:Key"]</code></td></tr>
+<tr><td><code>=</code></td><td>إسناد قيمة إلى خاصية أو متغير.</td><td><code>ValidateIssuer = true</code></td></tr>
+<tr><td><code>??</code></td><td>استخدم القيمة البديلة إذا كانت الأولى null.</td><td><code>jwtKey ?? ...</code></td></tr>
+<tr><td><code>=&gt;</code></td><td>تعريف تعبير Lambda.</td><td><code>options =&gt; { ... }</code></td></tr>
+<tr><td><code>&lt;T&gt;</code></td><td>تحديد نوع Generic.</td><td><code>UseMiddleware&lt;MyMiddleware&gt;()</code></td></tr>
+<tr><td><code>//</code></td><td>تعليق لا ينفّذه البرنامج.</td><td><code>// تعليق</code></td></tr>
+<tr><td><code>!</code></td><td>في <code>!=</code> تعني «لا يساوي»؛ أما <code>!value</code> فقد تعني النفي المنطقي حسب النوع.</td><td><code>value != null</code></td></tr>
+</table>
+</section>
+
+<section class="card">
+<h2>14) كيف تتخيل رحلة طلب محمي بـ JWT؟</h2>
+<ol>
+<li>العميل يرسل طلباً إلى API ويضع التوكن في ترويسة HTTP: <code>Authorization: Bearer &lt;token&gt;</code>.</li>
+<li><code>UseAuthentication()</code> يشغّل معالج JWT لقراءة التوكن والتحقق من التوقيع والمُصدر والجمهور ووقت الصلاحية.</li>
+<li>إذا كان التوكن صالحاً، تتوفر Claims المستخدم ضمن سياق الطلب.</li>
+<li><code>UseAuthorization()</code> يفحص سياسة الوصول أو الدور المطلوب.</li>
+<li>إذا سمحت السياسة، يصل الطلب إلى Controller؛ وإلا يرجع التطبيق عادةً استجابة رفض مناسبة.</li>
+</ol>
+</section>
+
+<section class="card">
+<h2>15) خلاصة تحفظها</h2>
+<ul>
+<li><b>using:</b> استيراد مساحة أسماء.</li>
+<li><b>builder.Services:</b> تسجيل الخدمات التي سيستخدمها التطبيق.</li>
+<li><b>JWT Authentication:</b> التحقق من هوية صاحب التوكن.</li>
+<li><b>Authorization Policies:</b> تحديد ما يُسمح للمستخدم بفعله.</li>
+<li><b>Swagger:</b> توثيق وتجربة واجهات API.</li>
+<li><b>Middleware:</b> مراحل تمر بها طلبات HTTP.</li>
+<li><b>Seeder:</b> تهيئة بيانات أولية عند بدء التطبيق.</li>
+<li><b>app.Run():</b> بدء تشغيل الخادم.</li>
+</ul>
+</section>
+<section class="card">
+<h2>16) ملفات مرتبطة في هذا المجلد</h2>
+<ul>
+<li><a href="Authorization/AuthorizationExtensions.cs.html">AuthorizationExtensions.cs.html</a></li>
+<li><a href="Middleware/ExceptionHandlingMiddleware.cs.html">ExceptionHandlingMiddleware.cs.html</a></li>
+<li><a href="appsettings.Development.json.html">appsettings.Development.json.html</a></li>
+<li><a href="Controllers/AuthController.cs.html">AuthController.cs.html</a></li>
+<li><a href="ProjectManagementSystem.Api.csproj.html">ProjectManagementSystem.Api.csproj.html</a></li>
+</ul>
+</section>
+<section class="card">
+<h2>مصادر موثوقة للتعلّم والمتابعة</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/aspnet/core/fundamentals/minimal-apis/webapplication" target="_blank" rel="noopener">Microsoft Learn — WebApplication وتهيئة التطبيق</a></li>
+<li><a href="https://learn.microsoft.com/aspnet/core/security/authentication/jwt" target="_blank" rel="noopener">Microsoft Learn — JWT Bearer Authentication</a></li>
+<li><a href="https://learn.microsoft.com/aspnet/core/fundamentals/middleware/" target="_blank" rel="noopener">Microsoft Learn — Middleware في ASP.NET Core</a></li>
+<li><a href="https://learn.microsoft.com/aspnet/core/fundamentals/dependency-injection" target="_blank" rel="noopener">Microsoft Learn — Dependency Injection</a></li>
+<li><a href="https://learn.microsoft.com/aspnet/core/tutorials/getting-started-with-swashbuckle" target="_blank" rel="noopener">Microsoft Learn — Swagger / Swashbuckle</a></li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

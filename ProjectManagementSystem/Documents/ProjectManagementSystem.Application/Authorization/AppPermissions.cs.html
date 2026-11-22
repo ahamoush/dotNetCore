@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح AppPermissions.cs — صلاحيات النظام</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح ملف AppPermissions.cs خطوة بخطوة</h1>
+<p>معرّفات صلاحيات دقيقة (Policy names) للمشاريع والمهام والمستخدمين</p>
+</div></header>
+<main>
+<section class="card">
+<h2>قبل أن نبدأ: ما وظيفة هذا الملف؟</h2>
+<p>كل صلاحية هي نص ثابت بصيغة <code>Permissions.&lt;مجال&gt;.&lt;فعل&gt;</code>. تُستخدم في سياسات Authorization على الـ API وتُربط بالأدوار عبر <code>RolePermissionMap</code>.</p>
+</section>
+
+<section class="card">
+<h2>1) صلاحيات المشاريع</h2>
+<table><tr><th>الثابت</th><th>القيمة النصية</th></tr>
+<tr><td><code>Projects.View</code></td><td>Permissions.Projects.View</td></tr>
+<tr><td><code>Projects.Create</code></td><td>Permissions.Projects.Create</td></tr>
+<tr><td><code>Projects.Update</code></td><td>Permissions.Projects.Update</td></tr>
+<tr><td><code>Projects.Delete</code></td><td>Permissions.Projects.Delete</td></tr></table>
+</section>
+
+<section class="card">
+<h2>2) صلاحيات المهام</h2>
+<table><tr><th>الثابت</th><th>القيمة النصية</th></tr>
+<tr><td><code>Tasks.View</code></td><td>Permissions.Tasks.View</td></tr>
+<tr><td><code>Tasks.Create</code></td><td>Permissions.Tasks.Create</td></tr>
+<tr><td><code>Tasks.Update</code></td><td>Permissions.Tasks.Update</td></tr>
+<tr><td><code>Tasks.Delete</code></td><td>Permissions.Tasks.Delete</td></tr></table>
+</section>
+
+<section class="card">
+<h2>3) صلاحيات المستخدمين</h2>
+<table><tr><th>الثابت</th><th>القيمة النصية</th></tr>
+<tr><td><code>Users.View</code></td><td>Permissions.Users.View</td></tr>
+<tr><td><code>Users.ManageRoles</code></td><td>Permissions.Users.ManageRoles</td></tr></table>
+</section>
+
+<section class="card">
+<h2>4) مصفوفة All — كل الصلاحيات العشر</h2>
+<pre>public static readonly string[] All =
+[
+    Projects.View,
+    Projects.Create,
+    Projects.Update,
+    Projects.Delete,
+    Tasks.View,
+    Tasks.Create,
+    Tasks.Update,
+    Tasks.Delete,
+    Users.View,
+    Users.ManageRoles
+];</pre>
+<p>تُستخدم في <code>RolePermissionMap</code> لأدوار Admin و SuperAdmin وللتحقق من أن كل صلاحية مُسنَدة لدور واحد على الأقل.</p>
+</section>
+
+<section class="card">
+<h2>خلاصة تحفظها</h2>
+<ul>
+<li>10 صلاحيات: 4 مشاريع + 4 مهام + 2 مستخدمين.</li>
+<li>الأسماء نصية ثابتة — يجب أن تطابق ما في سياسات Api.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>ملفات مرتبطة</h2>
+<ul>
+<li><a href="AppRoles.cs.html">AppRoles.cs</a></li>
+<li><a href="RolePermissionMap.cs.html">RolePermissionMap.cs</a></li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>

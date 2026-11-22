@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شرح DependencyInjection.cs — تسجيل خدمات Infrastructure</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#596579;--blue:#175cd3;--line:#dce3ee;--code:#101828;--codeink:#e6edf7;--green:#067647;--orange:#b54708}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.9}
+header{background:linear-gradient(135deg,#102a56,#175cd3);color:white;padding:34px 20px}
+header .wrap,main{max-width:1050px;margin:auto}h1{margin:0 0 8px;font-size:27px}header p{margin:0;color:#e4ecff}
+main{padding:22px 16px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 3px 12px #1018280a}
+h2{font-size:21px;margin:0 0 12px;color:#123b78}h3{font-size:17px;margin:18px 0 6px}
+p{margin:8px 0}.muted{color:var(--muted)}.tag{display:inline-block;background:#eaf2ff;color:#1849a9;padding:2px 9px;border-radius:20px;font-size:12px}
+code{direction:ltr;unicode-bidi:embed;background:#eef2f7;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--code);color:var(--codeink);padding:15px;border-radius:10px;overflow:auto;font:13px/1.8 Consolas,monospace}
+.explain{border-right:4px solid var(--blue);padding:8px 13px;margin:10px 0;background:#f3f7ff;border-radius:7px}
+.warn{border-right:4px solid #f79009;background:#fffaeb;padding:10px 13px;border-radius:7px}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--line);padding:9px;text-align:right;vertical-align:top}th{background:#edf3fc}
+ul{padding-right:22px}.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.flow span{background:#edf3fc;border:1px solid #c9d8f0;padding:7px 11px;border-radius:8px}
+footer{text-align:center;color:var(--muted);padding:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>شرح ملف DependencyInjection.cs خطوة بخطوة</h1>
+<p>دليل للمبتدئ: كيف تُسجَّل قاعدة البيانات وIdentity والمستودعات والخدمات في حاوية DI.</p>
+</div></header>
+<main>
+<section class="card">
+<h2>قبل أن نبدأ: ما وظيفة هذا الملف؟</h2>
+<p>هذا الملف يوفّر الدالة الامتدادية <code>AddInfrastructure</code> التي يستدعيها <code>Program.cs</code> لتسجيل كل ما تحتاجه طبقة البنية التحتية: <code>ApplicationDbContext</code> مع SQL Server، و<strong>ASP.NET Core Identity</strong> للمستخدمين والأدوار، ثم الـ Repositories والخدمات وتحويل الـ Claims.</p>
+<div class="flow"><span>ConnectionString</span> ← <span>DbContext</span> ← <span>Identity</span> ← <span>Repositories</span> ← <span>Auth &amp; Admin</span> ← <span>ClaimsTransformation</span></div>
+</section>
+
+<section class="card">
+<h2>1) توقيع الدالة والاتصال بقاعدة البيانات</h2>
+<pre>public static IServiceCollection AddInfrastructure(
+    this IServiceCollection services,
+    IConfiguration configuration)
+{
+    services.AddDbContext&lt;ApplicationDbContext&gt;(options =&gt;
+        options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));</pre>
+<table>
+<tr><th>الجزء</th><th>المعنى</th></tr>
+<tr><td><code>GetConnectionString("DefaultConnection")</code></td><td>يقرأ سلسلة الاتصال من الإعدادات تحت المفتاح <code>ConnectionStrings:DefaultConnection</code> — لا تُخزَّن القيمة السرية في هذا الشرح.</td></tr>
+<tr><td><code>AddDbContext&lt;ApplicationDbContext&gt;</code></td><td>يسجّل سياق EF Core بحيث يُحقَن في المستودعات و<code>UserAdminService</code>.</td></tr>
+<tr><td><code>UseSqlServer</code></td><td>يحدد مزود SQL Server (الحزمة <code>Microsoft.EntityFrameworkCore.SqlServer</code>).</td></tr>
+</table>
+</section>
+
+<section class="card">
+<h2>2) إعداد Identity Core</h2>
+<pre>services
+    .AddIdentityCore&lt;ApplicationUser&gt;(options =&gt;
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = false;
+    })
+    .AddRoles&lt;IdentityRole&gt;()
+    .AddEntityFrameworkStores&lt;ApplicationDbContext&gt;();</pre>
+<table>
+<tr><th>خيار كلمة المرور / المستخدم</th><th>القيمة في الكود</th></tr>
+<tr><td>بريد فريد</td><td><code>RequireUniqueEmail = true</code></td></tr>
+<tr><td>الحد الأدنى للطول</td><td>8 أحرف</td></tr>
+<tr><td>رقم، حرف كبير، حرف صغير</td><td>مطلوب</td></tr>
+<tr><td>رمز غير أبجدي رقمي</td><td>غير مطلوب (<code>false</code>)</td></tr>
+</table>
+<div class="explain"><b>ملاحظة:</b> <code>AddIdentityCore</code> يوفّر <code>UserManager</code> و<code>RoleManager</code> بدون واجهات تسجيل الدخول الكاملة؛ JWT يُدار في مشروع الـ API و<code>AuthService</code>.</div>
+</section>
+
+<section class="card">
+<h2>3) تسجيل المستودعات والخدمات</h2>
+<pre>services.AddScoped&lt;IProjectRepository, ProjectRepository&gt;();
+services.AddScoped&lt;ITaskRepository, TaskRepository&gt;();
+services.AddScoped&lt;IAuthService, AuthService&gt;();
+services.AddScoped&lt;IUserAdminService, UserAdminService&gt;();
+services.AddTransient&lt;IClaimsTransformation, PermissionClaimsTransformation&gt;();</pre>
+<table>
+<tr><th>الواجهة</th><th>التنفيذ</th><th>دورة الحياة</th></tr>
+<tr><td><code>IProjectRepository</code></td><td><code>ProjectRepository</code></td><td>Scoped (طلب HTTP واحد)</td></tr>
+<tr><td><code>ITaskRepository</code></td><td><code>TaskRepository</code></td><td>Scoped</td></tr>
+<tr><td><code>IAuthService</code></td><td><code>AuthService</code></td><td>Scoped</td></tr>
+<tr><td><code>IUserAdminService</code></td><td><code>UserAdminService</code></td><td>Scoped</td></tr>
+<tr><td><code>IClaimsTransformation</code></td><td><code>PermissionClaimsTransformation</code></td><td>Transient</td></tr>
+</table>
+</section>
+
+<section class="card">
+<h2>ملخص</h2>
+<p>ملف واحد يربط الإعدادات بقاعدة البيانات، يفعّل Identity على <code>ApplicationUser</code>، ويسجّل كل تنفيذات طبقة Infrastructure التي تستهلكها طبقة Application والـ API.</p>
+</section>
+
+<section class="card">
+<h2>ملفات مرتبطة</h2>
+<ul>
+<li><a href="Persistence/ApplicationDbContext.html">Persistence/ApplicationDbContext.html</a></li>
+<li><a href="Services/AuthService.html">Services/AuthService.html</a></li>
+<li><a href="Services/UserAdminService.html">Services/UserAdminService.html</a></li>
+<li><a href="Services/PermissionClaimsTransformation.html">Services/PermissionClaimsTransformation.html</a></li>
+<li><a href="Repositories/ProjectRepository.html">Repositories/ProjectRepository.html</a></li>
+<li><a href="Repositories/TaskRepository.html">Repositories/TaskRepository.html</a></li>
+<li><a href="ProjectManagementSystem.Infrastructure.csproj.html">ProjectManagementSystem.Infrastructure.csproj.html</a></li>
+</ul>
+</section>
+<footer>تم إعداد هذا الدليل للمراجعة والتعلّم — اقرأ كل قسم ثم ارجع إلى السطر المقابل في الملف المصدري.</footer>
+</main>
+</body>
+</html>
