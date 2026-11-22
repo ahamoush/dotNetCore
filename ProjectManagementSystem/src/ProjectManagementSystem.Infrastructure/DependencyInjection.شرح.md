@@ -7,10 +7,6 @@
 `AddDbContext<ApplicationDbContext>` يسجل السياق كـ Scoped: طلب واحد، سياق واحد.
 `UseSqlServer(configuration.GetConnectionString("DefaultConnection"))` يقرأ المفتاح من `appsettings.json`.
 
-## حماية البيانات
-
-`AddDataProtection()` مفاتيح Identity للرموز المؤقتة. في التطوير تُحفظ في مجلد المستخدم وتظهر رسالة Serilog بذلك.
-
 ## Identity
 
 `AddIdentityCore<ApplicationUser>` مستخدمون بدون واجهة صفحات Identity.
@@ -23,7 +19,8 @@
 ثم:
 - `AddRoles<IdentityRole>()` أدوار.
 - `AddEntityFrameworkStores` الجداول في نفس السياق.
-- `AddSignInManager` و`AddDefaultTokenProviders` أدوات Identity الجاهزة.
+
+التطبيق يتحقق من كلمة السر عبر `UserManager` ويصدر JWT. لا يوجد تسجيل دخول بالكوكيز ولا رموز تأكيد بريد أو استعادة كلمة سر، لذلك لا يُسجَّل `SignInManager` ولا مزوّدات الرموز.
 
 ## الخدمات
 
