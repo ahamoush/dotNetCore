@@ -16,12 +16,6 @@ public class AuthService : IAuthService
     private readonly UserManager<ApplicationUser> _users;
     private readonly IConfiguration _configuration;
 
-    static AuthService()
-    {
-        JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
-        JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
-    }
-
     public AuthService(UserManager<ApplicationUser> users, IConfiguration configuration)
     {
         _users = users;
@@ -65,11 +59,13 @@ public class AuthService : IAuthService
 
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, user.Id),
-            new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-            new(AppClaimTypes.Name, user.FullName)
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+            new Claim(AppClaimTypes.Name, user.FullName)
         };
-        claims.AddRange(roles.Select(role => new Claim(AppClaimTypes.Role, role)));
+
+        foreach (string role in roles)
+            claims.Add(new Claim(AppClaimTypes.Role, role));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(ReadKey()));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -103,8 +99,10 @@ public class AuthService : IAuthService
 
     private int ReadExpiresInMinutes()
     {
-        return int.TryParse(_configuration["Jwt:ExpiresInMinutes"], out var minutes) && minutes > 0
-            ? minutes
-            : 60;
+        string? text = _configuration["Jwt:ExpiresInMinutes"];
+        if (int.TryParse(text, out int minutes) && minutes > 0)
+            return minutes;
+
+        return 60;
     }
 }

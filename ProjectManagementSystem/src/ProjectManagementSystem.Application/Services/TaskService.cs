@@ -1,3 +1,4 @@
+using AutoMapper;
 using ProjectManagementSystem.Application.DTOs.Tasks;
 using ProjectManagementSystem.Application.Interfaces;
 using ProjectManagementSystem.Domain.Entities;
@@ -8,23 +9,25 @@ public class TaskService : ITaskService
 {
     private readonly ITaskRepository _tasks;
     private readonly IProjectRepository _projects;
+    private readonly IMapper _mapper;
 
-    public TaskService(ITaskRepository tasks, IProjectRepository projects)
+    public TaskService(ITaskRepository tasks, IProjectRepository projects, IMapper mapper)
     {
         _tasks = tasks;
         _projects = projects;
+        _mapper = mapper;
     }
 
     public async Task<IEnumerable<TaskResponseDto>> GetAllAsync(int? projectId)
     {
         var tasks = await _tasks.ListAsync(projectId);
-        return tasks.Select(ToResponseDto).ToList();
+        return _mapper.Map<List<TaskResponseDto>>(tasks);
     }
 
     public async Task<TaskResponseDto?> GetByIdAsync(int id)
     {
         var task = await _tasks.GetByIdAsync(id, tracking: false);
-        return task is null ? null : ToResponseDto(task);
+        return task is null ? null : _mapper.Map<TaskResponseDto>(task);
     }
 
     public async Task<TaskResponseDto?> CreateAsync(CreateTaskDto dto)
@@ -32,18 +35,12 @@ public class TaskService : ITaskService
         if (!await _projects.AnyAsync(dto.ProjectId))
             return null;
 
-        var task = new ProjectTask
-        {
-            Title = dto.Title,
-            Description = dto.Description,
-            DueDate = dto.DueDate,
-            ProjectId = dto.ProjectId
-        };
+        var task = _mapper.Map<ProjectTask>(dto);
 
         await _tasks.AddAsync(task);
         await _tasks.SaveChangesAsync();
 
-        return ToResponseDto(task);
+        return _mapper.Map<TaskResponseDto>(task);
     }
 
     public async Task<bool> UpdateAsync(int id, UpdateTaskDto dto)
@@ -52,10 +49,7 @@ public class TaskService : ITaskService
         if (task is null)
             return false;
 
-        task.Title = dto.Title;
-        task.Description = dto.Description;
-        task.IsCompleted = dto.IsCompleted;
-        task.DueDate = dto.DueDate;
+        _mapper.Map(dto, task);
 
         await _tasks.SaveChangesAsync();
         return true;
@@ -70,18 +64,5 @@ public class TaskService : ITaskService
         _tasks.Remove(task);
         await _tasks.SaveChangesAsync();
         return true;
-    }
-
-    private static TaskResponseDto ToResponseDto(ProjectTask task)
-    {
-        return new TaskResponseDto
-        {
-            Id = task.Id,
-            Title = task.Title,
-            Description = task.Description,
-            IsCompleted = task.IsCompleted,
-            DueDate = task.DueDate,
-            ProjectId = task.ProjectId
-        };
     }
 }

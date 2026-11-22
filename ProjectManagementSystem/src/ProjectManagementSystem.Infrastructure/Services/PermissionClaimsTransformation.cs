@@ -23,31 +23,35 @@ public class PermissionClaimsTransformation : IClaimsTransformation
         if (principal.HasClaim(AppClaimTypes.PermissionsSynced, "true"))
             return principal;
 
-        var userId = principal.FindFirst("sub")?.Value;
+        string? userId = principal.FindFirst("sub")?.Value;
         if (string.IsNullOrEmpty(userId))
             return principal;
 
-        var roles = await _db.UserRoles
+        List<string> roleIds = await _db.UserRoles
             .AsNoTracking()
-            .Where(userRole => userRole.UserId == userId)
-            .Join(
-                _db.Roles.AsNoTracking(),
-                userRole => userRole.RoleId,
-                role => role.Id,
-                (userRole, role) => role.Name!)
+            .Where(link => link.UserId == userId)
+            .Select(link => link.RoleId)
             .ToListAsync();
 
-        var clone = principal.Clone();
+        List<string> roleNames = await _db.Roles
+            .AsNoTracking()
+            .Where(role => roleIds.Contains(role.Id) && role.Name != null)
+            .Select(role => role.Name!)
+            .ToListAsync();
+
+        ClaimsPrincipal clone = principal.Clone();
         var identity = (ClaimsIdentity)clone.Identity!;
-        var roleClaimType = string.IsNullOrEmpty(identity.RoleClaimType)
-            ? AppClaimTypes.Role
-            : identity.RoleClaimType;
 
-        foreach (var claim in identity.FindAll(roleClaimType).ToList())
-            identity.TryRemoveClaim(claim);
+        string roleClaimType = AppClaimTypes.Role;
+        if (!string.IsNullOrEmpty(identity.RoleClaimType))
+            roleClaimType = identity.RoleClaimType;
 
-        foreach (var role in roles.Distinct(StringComparer.Ordinal))
-            identity.AddClaim(new Claim(roleClaimType, role));
+        List<Claim> oldRoleClaims = identity.FindAll(roleClaimType).ToList();
+        foreach (Claim oldClaim in oldRoleClaims)
+            identity.RemoveClaim(oldClaim);
+
+        foreach (string roleName in roleNames)
+            identity.AddClaim(new Claim(roleClaimType, roleName));
 
         identity.AddClaim(new Claim(AppClaimTypes.PermissionsSynced, "true"));
         return clone;

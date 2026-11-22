@@ -37,13 +37,16 @@ public static class RolePermissionMap
         [AppRoles.SuperAdmin] = AppPermissions.All
     };
 
-    static RolePermissionMap()
+    public static void EnsureEveryPermissionHasARole()
     {
-        var missing = AppPermissions.All
-            .Where(permission => RolesWith(permission).Length == 0)
-            .ToArray();
+        var missing = new List<string>();
+        foreach (string permission in AppPermissions.All)
+        {
+            if (RolesWith(permission).Length == 0)
+                missing.Add(permission);
+        }
 
-        if (missing.Length > 0)
+        if (missing.Count > 0)
         {
             throw new InvalidOperationException(
                 "Permissions are not assigned to any role: " + string.Join(", ", missing));
@@ -51,21 +54,43 @@ public static class RolePermissionMap
     }
 
     public static IReadOnlyList<string> ForRole(string role)
-        => Map.TryGetValue(role, out var permissions) ? permissions : [];
+    {
+        if (Map.TryGetValue(role, out string[]? permissions))
+            return permissions;
+
+        return [];
+    }
 
     public static IReadOnlyList<string> ForRoles(IEnumerable<string> roles)
     {
-        return roles
-            .SelectMany(ForRole)
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
+        var permissions = new List<string>();
+        foreach (string role in roles)
+        {
+            foreach (string permission in ForRole(role))
+            {
+                if (!permissions.Contains(permission))
+                    permissions.Add(permission);
+            }
+        }
+
+        return permissions;
     }
 
     public static string[] RolesWith(string permission)
     {
-        return Map
-            .Where(pair => pair.Value.Contains(permission, StringComparer.Ordinal))
-            .Select(pair => pair.Key)
-            .ToArray();
+        var roles = new List<string>();
+        foreach (KeyValuePair<string, string[]> pair in Map)
+        {
+            foreach (string allowed in pair.Value)
+            {
+                if (allowed == permission)
+                {
+                    roles.Add(pair.Key);
+                    break;
+                }
+            }
+        }
+
+        return roles.ToArray();
     }
 }

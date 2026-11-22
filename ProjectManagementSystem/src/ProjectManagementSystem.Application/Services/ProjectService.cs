@@ -1,3 +1,4 @@
+using AutoMapper;
 using ProjectManagementSystem.Application.DTOs;
 using ProjectManagementSystem.Application.DTOs.Projects;
 using ProjectManagementSystem.Application.Interfaces;
@@ -8,36 +9,34 @@ namespace ProjectManagementSystem.Application.Services;
 public class ProjectService : IProjectService
 {
     private readonly IProjectRepository _projects;
+    private readonly IMapper _mapper;
 
-    public ProjectService(IProjectRepository projects)
+    public ProjectService(IProjectRepository projects, IMapper mapper)
     {
         _projects = projects;
+        _mapper = mapper;
     }
 
     public async Task<IEnumerable<ProjectResponseDto>> GetAllAsync()
     {
         var projects = await _projects.ListAsync();
-        return projects.Select(ToResponseDto).ToList();
+        return _mapper.Map<List<ProjectResponseDto>>(projects);
     }
 
     public async Task<ProjectResponseDto?> GetByIdAsync(int id)
     {
         var project = await _projects.GetByIdAsync(id, tracking: false);
-        return project is null ? null : ToResponseDto(project);
+        return project is null ? null : _mapper.Map<ProjectResponseDto>(project);
     }
 
     public async Task<ProjectResponseDto> CreateAsync(CreateProjectDto dto)
     {
-        var project = new Project
-        {
-            Name = dto.Name,
-            Description = dto.Description
-        };
+        var project = _mapper.Map<Project>(dto);
 
         await _projects.AddAsync(project);
         await _projects.SaveChangesAsync();
 
-        return ToResponseDto(project);
+        return _mapper.Map<ProjectResponseDto>(project);
     }
 
     public async Task<bool> UpdateAsync(int id, UpdateProjectDto dto)
@@ -46,8 +45,7 @@ public class ProjectService : IProjectService
         if (project is null)
             return false;
 
-        project.Name = dto.Name;
-        project.Description = dto.Description;
+        _mapper.Map(dto, project);
         project.UpdatedAt = DateTime.UtcNow;
 
         await _projects.SaveChangesAsync();
@@ -73,22 +71,10 @@ public class ProjectService : IProjectService
 
         return new PagedResultDto<ProjectResponseDto>
         {
-            Items = items.Select(ToResponseDto).ToList(),
+            Items = _mapper.Map<List<ProjectResponseDto>>(items),
             TotalCount = totalCount,
             PageNumber = query.PageNumber,
             PageSize = query.PageSize
-        };
-    }
-
-    private static ProjectResponseDto ToResponseDto(Project project)
-    {
-        return new ProjectResponseDto
-        {
-            Id = project.Id,
-            Name = project.Name,
-            Description = project.Description,
-            Status = project.Status,
-            CreatedAt = project.CreatedAt
         };
     }
 }

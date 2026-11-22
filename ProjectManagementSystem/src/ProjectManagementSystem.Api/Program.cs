@@ -8,74 +8,97 @@ using ProjectManagementSystem.Application;
 using ProjectManagementSystem.Application.Authorization;
 using ProjectManagementSystem.Infrastructure;
 using ProjectManagementSystem.Infrastructure.Persistence;
+using Serilog;
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-builder.Services.AddControllers();
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
 
-var jwtKey = builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException("Jwt:Key is missing.");
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
 
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.MapInboundClaims = false;
-        options.TokenValidationParameters = new TokenValidationParameters
+    builder.Services.AddControllers();
+    builder.Services.AddApplication();
+    builder.Services.AddInfrastructure(builder.Configuration);
+
+    var jwtKey = builder.Configuration["Jwt:Key"]
+        ?? throw new InvalidOperationException("Jwt:Key is missing.");
+
+    builder.Services
+        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            RoleClaimType = AppClaimTypes.Role,
-            NameClaimType = AppClaimTypes.Name
-        };
-    });
+            options.MapInboundClaims = false;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                ValidAudience = builder.Configuration["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+                RoleClaimType = AppClaimTypes.Role,
+                NameClaimType = AppClaimTypes.Name
+            };
+        });
 
-builder.Services.AddPermissionPolicies();
+    builder.Services.AddPermissionPolicies();
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(options =>
     {
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        Description = "الصق التوكن فقط، من غير كلمة Bearer."
+        options.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "الصق التوكن فقط، من غير كلمة Bearer."
+        });
+
+        options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference("bearer", document)] = []
+        });
     });
 
-    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    var app = builder.Build();
+    app.Services.AssertMappingsAreValid();
+
+    using (var scope = app.Services.CreateScope())
     {
-        [new OpenApiSecuritySchemeReference("bearer", document)] = []
-    });
-});
+        await IdentitySeeder.SeedAsync(scope.ServiceProvider, app.Configuration);
+    }
 
-var app = builder.Build();
+    app.UseSerilogRequestLogging();
+    app.UseMiddleware<ProjectManagementSystem.Api.Middleware.ExceptionHandlingMiddleware>();
 
-using (var scope = app.Services.CreateScope())
-{
-    await IdentitySeeder.SeedAsync(scope.ServiceProvider, app.Configuration);
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
+
+    app.UseHttpsRedirection();
+    app.UseAuthentication();
+    app.UseAuthorization();
+    app.MapControllers();
+    app.Run();
 }
-
-app.UseMiddleware<ProjectManagementSystem.Api.Middleware.ExceptionHandlingMiddleware>();
-
-if (app.Environment.IsDevelopment())
+catch (Exception exception) when (exception is not HostAbortedException)
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    Log.Fatal(exception, "Application terminated unexpectedly.");
 }
-
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
-app.Run();
+finally
+{
+    Log.CloseAndFlush();
+}

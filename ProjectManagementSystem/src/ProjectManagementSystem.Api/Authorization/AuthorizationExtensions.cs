@@ -7,6 +7,8 @@ public static class AuthorizationExtensions
 {
     public static IServiceCollection AddPermissionPolicies(this IServiceCollection services)
     {
+        RolePermissionMap.EnsureEveryPermissionHasARole();
+
         services.AddAuthorization(options =>
         {
             options.FallbackPolicy = new AuthorizationPolicyBuilder()

@@ -1,10 +1,11 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ProjectManagementSystem.Api.Validation;
 using ProjectManagementSystem.Application.Authorization;
 using ProjectManagementSystem.Application.DTOs;
 using ProjectManagementSystem.Application.DTOs.Projects;
 using ProjectManagementSystem.Application.Interfaces;
-using ProjectManagementSystem.Application.Validators;
 
 namespace ProjectManagementSystem.Api.Controllers;
 
@@ -14,29 +15,43 @@ namespace ProjectManagementSystem.Api.Controllers;
 public class ProjectsController : ControllerBase
 {
     private readonly IProjectService _service;
+    private readonly IValidator<ProjectQueryDto> _queryValidator;
+    private readonly IValidator<CreateProjectDto> _createValidator;
+    private readonly IValidator<UpdateProjectDto> _updateValidator;
 
-    public ProjectsController(IProjectService service)
+    public ProjectsController(
+        IProjectService service,
+        IValidator<ProjectQueryDto> queryValidator,
+        IValidator<CreateProjectDto> createValidator,
+        IValidator<UpdateProjectDto> updateValidator)
     {
         _service = service;
+        _queryValidator = queryValidator;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
     }
 
     [Authorize(Policy = AppPermissions.Projects.View)]
     [HttpGet("all")]
     public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAll()
     {
-        var projects = await _service.GetAllAsync();
+        IEnumerable<ProjectResponseDto> projects = await _service.GetAllAsync();
         return Ok(projects);
     }
 
     [Authorize(Policy = AppPermissions.Projects.View)]
     [HttpGet]
-    public async Task<ActionResult<PagedResultDto<ProjectResponseDto>>> GetProjects(
+    public async Task<IActionResult> GetProjects(
         [FromQuery] ProjectQueryDto query)
     {
-        if (!ProjectQueryValidator.HasValidPaging(query))
-            return BadRequest(new { message = "Invalid pagination parameters." });
+        IActionResult? invalid = await InputValidation.CheckAsync(
+            _queryValidator,
+            query,
+            HttpContext.RequestAborted);
+        if (invalid is not null)
+            return invalid;
 
-        var result = await _service.GetProjectsAsync(query);
+        PagedResultDto<ProjectResponseDto> result = await _service.GetProjectsAsync(query);
         return Ok(result);
     }
 
@@ -44,7 +59,7 @@ public class ProjectsController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ProjectResponseDto>> GetById(int id)
     {
-        var project = await _service.GetByIdAsync(id);
+        ProjectResponseDto? project = await _service.GetByIdAsync(id);
         if (project is null)
             return NotFound(new { message = "Project not found." });
 
@@ -53,9 +68,16 @@ public class ProjectsController : ControllerBase
 
     [Authorize(Policy = AppPermissions.Projects.Create)]
     [HttpPost]
-    public async Task<ActionResult<ProjectResponseDto>> Create(CreateProjectDto dto)
+    public async Task<IActionResult> Create(CreateProjectDto dto)
     {
-        var project = await _service.CreateAsync(dto);
+        IActionResult? invalid = await InputValidation.CheckAsync(
+            _createValidator,
+            dto,
+            HttpContext.RequestAborted);
+        if (invalid is not null)
+            return invalid;
+
+        ProjectResponseDto project = await _service.CreateAsync(dto);
         return Ok(project);
     }
 
@@ -63,7 +85,14 @@ public class ProjectsController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, UpdateProjectDto dto)
     {
-        var updated = await _service.UpdateAsync(id, dto);
+        IActionResult? invalid = await InputValidation.CheckAsync(
+            _updateValidator,
+            dto,
+            HttpContext.RequestAborted);
+        if (invalid is not null)
+            return invalid;
+
+        bool updated = await _service.UpdateAsync(id, dto);
         if (!updated)
             return NotFound(new { message = "Project not found." });
 
@@ -74,7 +103,7 @@ public class ProjectsController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await _service.DeleteAsync(id);
+        bool deleted = await _service.DeleteAsync(id);
         if (!deleted)
             return NotFound(new { message = "Project not found." });
 

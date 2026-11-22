@@ -1,5 +1,7 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ProjectManagementSystem.Api.Validation;
 using ProjectManagementSystem.Application.Authorization;
 using ProjectManagementSystem.Application.DTOs.Tasks;
 using ProjectManagementSystem.Application.Interfaces;
@@ -12,18 +14,24 @@ namespace ProjectManagementSystem.Api.Controllers;
 public class TasksController : ControllerBase
 {
     private readonly ITaskService _service;
+    private readonly IValidator<CreateTaskDto> _createValidator;
+    private readonly IValidator<UpdateTaskDto> _updateValidator;
 
-    public TasksController(ITaskService service)
+    public TasksController(
+        ITaskService service,
+        IValidator<CreateTaskDto> createValidator,
+        IValidator<UpdateTaskDto> updateValidator)
     {
         _service = service;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
     }
 
     [Authorize(Policy = AppPermissions.Tasks.View)]
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<TaskResponseDto>>> GetAll(
-        [FromQuery] int? projectId)
+    public async Task<ActionResult<IEnumerable<TaskResponseDto>>> GetAll([FromQuery] int? projectId)
     {
-        var tasks = await _service.GetAllAsync(projectId);
+        IEnumerable<TaskResponseDto> tasks = await _service.GetAllAsync(projectId);
         return Ok(tasks);
     }
 
@@ -31,7 +39,7 @@ public class TasksController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<TaskResponseDto>> GetById(int id)
     {
-        var task = await _service.GetByIdAsync(id);
+        TaskResponseDto? task = await _service.GetByIdAsync(id);
         if (task is null)
             return NotFound(new { message = "Task not found." });
 
@@ -40,9 +48,16 @@ public class TasksController : ControllerBase
 
     [Authorize(Policy = AppPermissions.Tasks.Create)]
     [HttpPost]
-    public async Task<ActionResult<TaskResponseDto>> Create(CreateTaskDto dto)
+    public async Task<IActionResult> Create(CreateTaskDto dto)
     {
-        var task = await _service.CreateAsync(dto);
+        IActionResult? invalid = await InputValidation.CheckAsync(
+            _createValidator,
+            dto,
+            HttpContext.RequestAborted);
+        if (invalid is not null)
+            return invalid;
+
+        TaskResponseDto? task = await _service.CreateAsync(dto);
         if (task is null)
             return BadRequest(new { message = "Project does not exist." });
 
@@ -53,7 +68,14 @@ public class TasksController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, UpdateTaskDto dto)
     {
-        var updated = await _service.UpdateAsync(id, dto);
+        IActionResult? invalid = await InputValidation.CheckAsync(
+            _updateValidator,
+            dto,
+            HttpContext.RequestAborted);
+        if (invalid is not null)
+            return invalid;
+
+        bool updated = await _service.UpdateAsync(id, dto);
         if (!updated)
             return NotFound(new { message = "Task not found." });
 
@@ -64,7 +86,7 @@ public class TasksController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await _service.DeleteAsync(id);
+        bool deleted = await _service.DeleteAsync(id);
         if (!deleted)
             return NotFound(new { message = "Task not found." });
 
