@@ -11,4 +11,6 @@ public class AuthResponseDto
     public string FullName { get; set; } = string.Empty;
 
     public IList<string> Roles { get; set; } = [];
+
+    public IList<string> Permissions { get; set; } = [];
 }

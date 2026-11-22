@@ -1,10 +1,13 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ProjectManagementSystem.Application.Authorization;
 using ProjectManagementSystem.Application.DTOs.Tasks;
 using ProjectManagementSystem.Application.Interfaces;
 
 namespace ProjectManagementSystem.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class TasksController : ControllerBase
 {
@@ -15,6 +18,7 @@ public class TasksController : ControllerBase
         _service = service;
     }
 
+    [Authorize(Policy = AppPermissions.Tasks.View)]
     [HttpGet]
     public async Task<ActionResult<IEnumerable<TaskResponseDto>>> GetAll(
         [FromQuery] int? projectId)
@@ -23,6 +27,7 @@ public class TasksController : ControllerBase
         return Ok(tasks);
     }
 
+    [Authorize(Policy = AppPermissions.Tasks.View)]
     [HttpGet("{id:int}")]
     public async Task<ActionResult<TaskResponseDto>> GetById(int id)
     {
@@ -33,6 +38,7 @@ public class TasksController : ControllerBase
         return Ok(task);
     }
 
+    [Authorize(Policy = AppPermissions.Tasks.Create)]
     [HttpPost]
     public async Task<ActionResult<TaskResponseDto>> Create(CreateTaskDto dto)
     {
@@ -43,6 +49,7 @@ public class TasksController : ControllerBase
         return Ok(task);
     }
 
+    [Authorize(Policy = AppPermissions.Tasks.Update)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, UpdateTaskDto dto)
     {
@@ -53,6 +60,7 @@ public class TasksController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Policy = AppPermissions.Tasks.Delete)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

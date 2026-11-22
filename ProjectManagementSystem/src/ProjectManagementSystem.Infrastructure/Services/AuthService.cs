@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using ProjectManagementSystem.Application.Authorization;
 using ProjectManagementSystem.Application.DTOs.Auth;
 using ProjectManagementSystem.Application.Interfaces;
 using ProjectManagementSystem.Infrastructure.Persistence;
@@ -14,6 +15,12 @@ public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> _users;
     private readonly IConfiguration _configuration;
+
+    static AuthService()
+    {
+        JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+        JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
+    }
 
     public AuthService(UserManager<ApplicationUser> users, IConfiguration configuration)
     {
@@ -53,15 +60,16 @@ public class AuthService : IAuthService
     private async Task<AuthResponseDto> CreateResponseAsync(ApplicationUser user)
     {
         var roles = await _users.GetRolesAsync(user);
+        var permissions = RolePermissionMap.ForRoles(roles);
         var expiresAt = DateTime.UtcNow.AddMinutes(ReadExpiresInMinutes());
 
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id),
             new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-            new(ClaimTypes.Name, user.FullName)
+            new(AppClaimTypes.Name, user.FullName)
         };
-        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+        claims.AddRange(roles.Select(role => new Claim(AppClaimTypes.Role, role)));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(ReadKey()));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -79,7 +87,8 @@ public class AuthService : IAuthService
             ExpiresAt = expiresAt,
             Email = user.Email ?? string.Empty,
             FullName = user.FullName,
-            Roles = roles
+            Roles = roles,
+            Permissions = permissions.ToList()
         };
     }
 

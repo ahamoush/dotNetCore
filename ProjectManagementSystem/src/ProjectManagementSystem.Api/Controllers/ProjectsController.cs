@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ProjectManagementSystem.Application.Authorization;
 using ProjectManagementSystem.Application.DTOs;
 using ProjectManagementSystem.Application.DTOs.Projects;
 using ProjectManagementSystem.Application.Interfaces;
@@ -7,6 +9,7 @@ using ProjectManagementSystem.Application.Validators;
 namespace ProjectManagementSystem.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class ProjectsController : ControllerBase
 {
@@ -17,6 +20,7 @@ public class ProjectsController : ControllerBase
         _service = service;
     }
 
+    [Authorize(Policy = AppPermissions.Projects.View)]
     [HttpGet("all")]
     public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAll()
     {
@@ -24,6 +28,7 @@ public class ProjectsController : ControllerBase
         return Ok(projects);
     }
 
+    [Authorize(Policy = AppPermissions.Projects.View)]
     [HttpGet]
     public async Task<ActionResult<PagedResultDto<ProjectResponseDto>>> GetProjects(
         [FromQuery] ProjectQueryDto query)
@@ -35,6 +40,7 @@ public class ProjectsController : ControllerBase
         return Ok(result);
     }
 
+    [Authorize(Policy = AppPermissions.Projects.View)]
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ProjectResponseDto>> GetById(int id)
     {
@@ -45,6 +51,7 @@ public class ProjectsController : ControllerBase
         return Ok(project);
     }
 
+    [Authorize(Policy = AppPermissions.Projects.Create)]
     [HttpPost]
     public async Task<ActionResult<ProjectResponseDto>> Create(CreateProjectDto dto)
     {
@@ -52,6 +59,7 @@ public class ProjectsController : ControllerBase
         return Ok(project);
     }
 
+    [Authorize(Policy = AppPermissions.Projects.Update)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, UpdateProjectDto dto)
     {
@@ -62,6 +70,7 @@ public class ProjectsController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Policy = AppPermissions.Projects.Delete)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

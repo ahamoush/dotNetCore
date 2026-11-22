@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ProjectManagementSystem.Application.Authorization;
 using ProjectManagementSystem.Application.DTOs.Auth;
 using ProjectManagementSystem.Application.Interfaces;
 
@@ -15,6 +17,7 @@ public class AuthController : ControllerBase
         _auth = auth;
     }
 
+    [AllowAnonymous]
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponseDto>> Register(RegisterDto dto)
     {
@@ -25,6 +28,7 @@ public class AuthController : ControllerBase
         return Ok(result.Data);
     }
 
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponseDto>> Login(LoginDto dto)
     {
@@ -33,5 +37,24 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Invalid email or password." });
 
         return Ok(result.Data);
+    }
+
+    [Authorize]
+    [HttpGet("me")]
+    public ActionResult<CurrentUserDto> Me()
+    {
+        var roles = User.FindAll(AppClaimTypes.Role)
+            .Select(claim => claim.Value)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        return Ok(new CurrentUserDto
+        {
+            Id = User.FindFirst("sub")?.Value ?? string.Empty,
+            Email = User.FindFirst("email")?.Value ?? string.Empty,
+            FullName = User.FindFirst(AppClaimTypes.Name)?.Value ?? string.Empty,
+            Roles = roles,
+            Permissions = RolePermissionMap.ForRoles(roles).ToList()
+        });
     }
 }

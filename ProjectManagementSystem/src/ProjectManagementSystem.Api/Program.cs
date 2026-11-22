@@ -1,11 +1,16 @@
-using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using ProjectManagementSystem.Api.Authorization;
 using ProjectManagementSystem.Application;
+using ProjectManagementSystem.Application.Authorization;
 using ProjectManagementSystem.Infrastructure;
 using ProjectManagementSystem.Infrastructure.Persistence;
+
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,10 +35,12 @@ builder.Services
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            RoleClaimType = ClaimTypes.Role,
-            NameClaimType = ClaimTypes.Name
+            RoleClaimType = AppClaimTypes.Role,
+            NameClaimType = AppClaimTypes.Name
         };
     });
+
+builder.Services.AddPermissionPolicies();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -56,7 +63,7 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    await IdentitySeeder.SeedRolesAsync(scope.ServiceProvider);
+    await IdentitySeeder.SeedAsync(scope.ServiceProvider, app.Configuration);
 }
 
 app.UseMiddleware<ProjectManagementSystem.Api.Middleware.ExceptionHandlingMiddleware>();

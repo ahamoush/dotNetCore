@@ -1,4 +1,4 @@
-namespace ProjectManagementSystem.Infrastructure.Persistence;
+namespace ProjectManagementSystem.Application.Authorization;
 
 public static class AppRoles
 {
