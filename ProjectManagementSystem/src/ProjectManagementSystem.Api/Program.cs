@@ -3,8 +3,6 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-
-// استيراد المكتبات المطلوبة
 using ProjectManagementSystem.Api.Authorization;
 using ProjectManagementSystem.Application;
 using ProjectManagementSystem.Application.Authorization;
